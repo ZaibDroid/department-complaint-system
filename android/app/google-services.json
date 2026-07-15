@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "658843393155",
+    "project_id": "dcms-bbfca",
+    "storage_bucket": "dcms-bbfca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658843393155:android:c8e04ae36cca024a7a8fb6",
+        "android_client_info": {
+          "package_name": "com.example.complaint"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACUY5-hxqmw7pcN-kbQ3wpxtnNu_AYWS8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
