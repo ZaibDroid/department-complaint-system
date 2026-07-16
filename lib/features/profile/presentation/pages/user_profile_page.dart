@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../widgets/stat_card.dart';
 
 class UserProfilePage extends ConsumerStatefulWidget {
   final bool isSubPage;
@@ -139,7 +138,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: selectedSection,
+                        initialValue: selectedSection,
                         items: sections.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                         onChanged: (val) => setState(() => selectedSection = val),
                         decoration: const InputDecoration(labelText: 'Section'),
@@ -150,7 +149,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                         decoration: const InputDecoration(labelText: 'Department Name'),
                       ),
                       const SizedBox(height: 12),
-                      if (user.role == 'Batch Adviser') ...[
+                      if (user.role == 'Batch Adviser' || user.role == 'Coordinator') ...[
                         TextField(
                           controller: batchController,
                           decoration: const InputDecoration(labelText: 'Advising Batch No.'),
@@ -158,7 +157,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: selectedSection,
+                          initialValue: selectedSection,
                           items: sections.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (val) => setState(() => selectedSection = val),
                           decoration: const InputDecoration(labelText: 'Advising Section'),
@@ -524,7 +523,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                 ] else ...[
                   _buildTableRow('Department', (user.department != null && user.department!.trim().isNotEmpty) ? user.department! : 'N/A'),
                   const Divider(height: 1),
-                  if (user.role == 'Batch Adviser') ...[
+                  if (user.role == 'Batch Adviser' || user.role == 'Coordinator') ...[
                     _buildTableRow('Advising Batch', user.batch ?? 'N/A'),
                     const Divider(height: 1),
                     _buildTableRow('Advising Section', user.section ?? 'N/A'),

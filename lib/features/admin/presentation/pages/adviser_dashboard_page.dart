@@ -8,7 +8,6 @@ import '../../../../features/complaints/presentation/providers/complaint_provide
 import '../../../../features/complaints/data/models/complaint_model.dart';
 import '../../../../features/auth/domain/entities/user.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
 import '../../../../features/profile/presentation/pages/user_profile_page.dart';
 
@@ -77,9 +76,12 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
     List<User> students = asyncStudents.value ?? [];
     List<User> pendingStudents = students.where((s) => s.status == 'pending').toList();
 
-    final pendingCount = complaints.where((c) => c.status == 'pending').length;
+    final user = ref.read(authStateProvider).value;
+    final userName = user?.name ?? '';
+    
+    final pendingCount = complaints.where((c) => c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected').length;
     final resolvedCount = complaints.where((c) => c.status == 'resolved').length;
-    final forwardedCount = complaints.where((c) => c.status != 'pending' && c.status != 'resolved').length;
+    final forwardedCount = complaints.where((c) => c.assignedTo != userName && c.involvedStaffNames.contains(userName) && c.status != 'resolved').length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),
@@ -227,11 +229,13 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
   }
 
   Widget _buildComplaintsList(List<ComplaintModel> complaints, ThemeData theme) {
+    final user = ref.read(authStateProvider).value;
+    final userName = user?.name ?? '';
     var filtered = complaints.where((c) {
-      if (_selectedFilter == 'pending') return c.status == 'pending';
+      if (_selectedFilter == 'pending') return c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected';
       if (_selectedFilter == 'resolved') return c.status == 'resolved';
-      if (_selectedFilter == 'forwarded') return c.status != 'pending' && c.status != 'resolved';
-      if (_selectedFilter == 'processed') return c.status != 'pending';
+      if (_selectedFilter == 'forwarded') return c.assignedTo != userName && c.involvedStaffNames.contains(userName);
+      if (_selectedFilter == 'processed') return c.status == 'resolved' || c.status == 'rejected';
       return true;
     }).toList();
 
@@ -244,7 +248,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final c = filtered[index];
-        final isPending = c.status == 'pending';
+        final isPending = c.assignedTo == ref.read(authStateProvider).value?.name && c.status != 'resolved' && c.status != 'rejected';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -368,7 +372,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
                       tooltip: 'Approve Student',
                       onPressed: () async {
                         await ref.read(firebaseAuthRepositoryProvider).updateUserStatus(s.id, 'approved');
-                        if (context.mounted) {
+                        if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student approved successfully.')));
                         }
                       },
@@ -385,7 +389,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
                       tooltip: 'Reject Student',
                       onPressed: () async {
                         await ref.read(firebaseAuthRepositoryProvider).updateUserStatus(s.id, 'rejected');
-                        if (context.mounted) {
+                        if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student rejected.')));
                         }
                       },

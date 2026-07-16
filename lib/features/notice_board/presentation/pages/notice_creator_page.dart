@@ -75,12 +75,12 @@ class _NoticeCreatorPageState extends ConsumerState<NoticeCreatorPage> {
                 
                 try {
                   await ref.read(noticeRepositoryProvider).publishNotice(notice);
-                  if (mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notice Published!')));
                     context.pop();
                   }
                 } catch (e) {
-                  if (mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                   }
                 }
@@ -141,7 +141,7 @@ class _NoticeCreatorPageState extends ConsumerState<NoticeCreatorPage> {
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
                                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
                                 ),
-                                value: _category,
+                                initialValue: _category,
                                 items: ['General Announcement', 'Academic', 'Urgent', 'Events']
                                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                                     .toList(),

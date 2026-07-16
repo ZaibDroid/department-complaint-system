@@ -3,7 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../features/dashboard/presentation/widgets/staff_complaint_card.dart';
 import '../../../../features/complaints/presentation/providers/complaint_provider.dart';
+import '../../../../features/complaints/data/models/complaint_model.dart';
+import '../../../../features/profile/presentation/widgets/stat_card.dart';
+import '../../../../features/profile/presentation/pages/user_profile_page.dart';
+import 'assign_adviser_page.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 
 class CoordinatorDashboardPage extends ConsumerStatefulWidget {
   const CoordinatorDashboardPage({super.key});
@@ -12,111 +17,197 @@ class CoordinatorDashboardPage extends ConsumerStatefulWidget {
   ConsumerState<CoordinatorDashboardPage> createState() => _CoordinatorDashboardPageState();
 }
 
-class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardPage> {
+  String _selectedFilter = 'pending'; // 'pending', 'processed', 'forwarded'
+  int _bottomNavIndex = 0; // 0 for Dashboard, 1 for Profile
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final asyncComplaints = ref.watch(departmentComplaintsProvider);
 
+    List<ComplaintModel> complaints = asyncComplaints.value ?? [];
+
+    final user = ref.read(authStateProvider).value;
+    final userName = user?.name ?? '';
+    
+    final pendingCount = complaints.where((c) => c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected').length;
+    final processedCount = complaints.where((c) => c.status == 'resolved' || c.status == 'rejected').length;
+    final forwardedCount = complaints.where((c) => c.assignedTo != userName && c.involvedStaffNames.contains(userName)).length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),
       appBar: const DashboardAppBar(),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            color: Colors.white,
-            width: double.infinity,
-            child: const Text(
-              'Coordinator Portal',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF172548)),
+          if (_bottomNavIndex == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Coordinator Portal',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF172548)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          icon: Icons.pending_actions,
+                          iconColor: Colors.amber,
+                          value: pendingCount.toString(),
+                          label: 'PENDING',
+                          isSelected: _selectedFilter == 'pending',
+                          onTap: () => setState(() => _selectedFilter = 'pending'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: StatCard(
+                          icon: Icons.assignment_turned_in,
+                          iconColor: Colors.green,
+                          value: processedCount.toString(),
+                          label: 'PROCESSED',
+                          isSelected: _selectedFilter == 'processed',
+                          onTap: () => setState(() => _selectedFilter = 'processed'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: StatCard(
+                          icon: Icons.share_rounded,
+                          iconColor: Colors.indigo,
+                          value: forwardedCount.toString(),
+                          label: 'FORWARDED',
+                          isSelected: _selectedFilter == 'forwarded',
+                          onTap: () => setState(() => _selectedFilter = 'forwarded'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: theme.primaryColor,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: theme.primaryColor,
-              tabs: const [
-                Tab(text: 'Incoming Cases'),
-                Tab(text: 'Processed'),
-              ],
-            ),
-          ),
+          const SizedBox(height: 12),
           Expanded(
-            child: asyncComplaints.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
-              data: (complaints) {
-                final newComplaints = complaints.where((c) => c.status != 'resolved' && c.status != 'rejected').toList();
-                final processedComplaints = complaints.where((c) => c.status == 'resolved' || c.status == 'rejected').toList();
-
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: newComplaints.length,
-                      itemBuilder: (context, index) {
-                        final c = newComplaints[index];
-                        return StaffComplaintCard(
-                          studentName: c.studentName,
-                          batch: c.studentBatch ?? 'N/A',
-                          title: c.title,
-                          status: c.status,
-                          date: 'Just now',
-                          onForward: () {
-                             context.push('/select_recipient', extra: c);
-                          },
-                          onResolve: () {
-                            ref.read(submitComplaintProvider.notifier).updateStatus(c.id, 'resolved', 'Resolved by Coordinator');
-                          },
-                          onReject: () {
-                            ref.read(submitComplaintProvider.notifier).updateStatus(c.id, 'rejected', 'Returned by Coordinator');
-                          },
-                        );
-                      },
-                    ),
-                    ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: processedComplaints.length,
-                      itemBuilder: (context, index) {
-                        final c = processedComplaints[index];
-                        return StaffComplaintCard(
-                          studentName: c.studentName,
-                          batch: c.studentBatch ?? 'N/A',
-                          title: c.title,
-                          status: c.status,
-                          date: 'Processed',
-                          onForward: () {},
-                          onResolve: () {},
-                          onReject: () {},
-                        );
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
+            child: _bottomNavIndex == 2
+                ? const UserProfilePage(isSubPage: false)
+                : _bottomNavIndex == 1
+                    ? const AssignAdviserPage(isEmbedded: true)
+                    : asyncComplaints.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Center(child: Text('Error: $e')),
+                        data: (complaintsList) {
+                          return _buildComplaintsList(complaintsList, theme);
+                        },
+                      ),
           ),
         ],
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _bottomNavIndex,
+        onTap: (index) {
+          setState(() {
+            _bottomNavIndex = index;
+            if (index == 0) _selectedFilter = 'pending'; // Reset filter when switching back
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: theme.primaryColor,
+        unselectedItemColor: Colors.grey.shade400,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.group_add), label: 'Advisers'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComplaintsList(List<ComplaintModel> complaints, ThemeData theme) {
+    final user = ref.read(authStateProvider).value;
+    final userName = user?.name ?? '';
+    var filtered = complaints.where((c) {
+      if (_selectedFilter == 'pending') return c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected';
+      if (_selectedFilter == 'processed') return c.status == 'resolved' || c.status == 'rejected';
+      if (_selectedFilter == 'forwarded') return c.assignedTo != userName && c.involvedStaffNames.contains(userName);
+      return true;
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return const Center(child: Text('No complaints found in this category.', style: TextStyle(color: Colors.grey)));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final c = filtered[index];
+        final isPending = c.assignedTo == ref.read(authStateProvider).value?.name && c.status != 'resolved' && c.status != 'rejected';
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () => context.push('/complaint_details', extra: c),
+            borderRadius: BorderRadius.circular(16),
+            child: StaffComplaintCard(
+              studentName: c.studentName,
+              batch: c.studentBatch ?? 'N/A',
+              title: c.title,
+              status: c.status,
+              date: '${c.createdAt.day.toString().padLeft(2, '0')}-${c.createdAt.month.toString().padLeft(2, '0')}-${c.createdAt.year} ${c.createdAt.hour.toString().padLeft(2, '0')}:${c.createdAt.minute.toString().padLeft(2, '0')}',
+              onForward: isPending ? () => context.push('/select_recipient', extra: c) : null,
+              onResolve: isPending ? () => _showActionDialog(context, c, 'resolved') : null,
+              onReject: isPending ? () => _showActionDialog(context, c, 'rejected') : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showActionDialog(BuildContext context, ComplaintModel c, String actionType) {
+    final commentController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('${actionType == 'resolved' ? 'Resolve' : 'Reject'} Complaint'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Please provide a comment for this action:'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: commentController,
+                decoration: InputDecoration(
+                  hintText: 'Enter comment...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final comment = commentController.text.trim().isEmpty 
+                    ? (actionType == 'resolved' ? 'Issue resolved by coordinator' : 'Returned by coordinator')
+                    : commentController.text.trim();
+                ref.read(submitComplaintProvider.notifier).updateStatus(c.id, actionType, comment);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: actionType == 'resolved' ? Colors.green : Colors.red, foregroundColor: Colors.white),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

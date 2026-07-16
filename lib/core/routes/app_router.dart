@@ -24,6 +24,7 @@ import '../../features/batch/presentation/pages/batch_management_portal_page.dar
 import '../../features/admin/presentation/pages/role_permission_editor_page.dart';
 import '../../features/admin/presentation/pages/dean_dashboard_page.dart';
 import '../../features/admin/presentation/pages/coordinator_dashboard_page.dart';
+import '../../features/admin/presentation/pages/assign_adviser_page.dart';
 import '../../features/admin/presentation/pages/office_dashboard_page.dart';
 import '../../features/complaints/presentation/pages/select_recipient_page.dart';
 import '../../features/users/presentation/pages/cr_directory_page.dart';
@@ -140,6 +141,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/coordinator',
         builder: (context, state) => const CoordinatorDashboardPage(),
+      ),
+      GoRoute(
+        path: '/assign_adviser',
+        builder: (context, state) => const AssignAdviserPage(),
       ),
       GoRoute(
         path: '/dashboard/office',

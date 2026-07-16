@@ -28,7 +28,6 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
     final authState = ref.watch(authStateProvider).value;
     final isStudent = authState?.role.toLowerCase() == 'student';
     final asyncComplaints = isStudent ? ref.watch(studentComplaintsProvider) : ref.watch(departmentComplaintsProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),

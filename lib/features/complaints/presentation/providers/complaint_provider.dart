@@ -28,11 +28,7 @@ final departmentComplaintsProvider = StreamProvider<List<ComplaintModel>>((ref) 
   }
   
   final repository = ref.watch(complaintRepositoryProvider);
-  if (user.role == 'Batch Adviser') {
-    return repository.streamDepartmentComplaints(adviserName: user.name);
-  } else {
-    return repository.streamDepartmentComplaints(department: user.department);
-  }
+  return repository.streamDepartmentComplaints(adviserName: user.name);
 });
 
 // AsyncNotifier for submitting a complaint to handle loading state from UI
@@ -56,10 +52,10 @@ class SubmitComplaintNotifier extends AsyncNotifier<void> {
     }
   }
   
-  Future<bool> updateStatus(String complaintId, String status, String remarks, {String? assignedTo}) async {
+  Future<bool> updateStatus(String complaintId, String status, String remarks, {String? assignedTo, List<String>? newInvolvedStaff}) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.updateComplaintStatus(complaintId, status, adminRemarks: remarks, assignedTo: assignedTo);
+      await _repository.updateComplaintStatus(complaintId, status, adminRemarks: remarks, assignedTo: assignedTo, newInvolvedStaff: newInvolvedStaff);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, stack) {

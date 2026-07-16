@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/presentation/providers/auth_provider.dart';
-
 class MainLayout extends ConsumerWidget {
   final Widget child;
 
@@ -37,8 +35,6 @@ class MainLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final authState = ref.watch(authStateProvider).value;
-    final isStudent = authState?.role.toLowerCase() == 'student';
 
     return Scaffold(
       body: child,

@@ -63,7 +63,7 @@ class ComplaintRepository {
             try {
               return ComplaintModel.fromMap(doc.data(), doc.id);
             } catch (e) {
-              print('Error parsing complaint ${doc.id}: $e');
+              // print('Error parsing complaint ${doc.id}: $e');
               return null;
             }
           })
@@ -83,7 +83,12 @@ class ComplaintRepository {
     }
     
     if (adviserName != null && adviserName.isNotEmpty) {
-      query = query.where('assignedTo', isEqualTo: adviserName);
+      query = query.where(
+        Filter.or(
+          Filter('assignedTo', isEqualTo: adviserName),
+          Filter('involvedStaffNames', arrayContains: adviserName),
+        ),
+      );
     }
     
     return query.snapshots().map((snapshot) {
@@ -92,7 +97,7 @@ class ComplaintRepository {
             try {
               return ComplaintModel.fromMap(doc.data(), doc.id);
             } catch (e) {
-              print('Error parsing department complaint ${doc.id}: $e');
+              // print('Error parsing department complaint ${doc.id}: $e');
               return null;
             }
           })
@@ -104,7 +109,7 @@ class ComplaintRepository {
     });
   }
 
-  Future<void> updateComplaintStatus(String id, String newStatus, {String? adminRemarks, String? assignedToId, String? assignedTo}) async {
+  Future<void> updateComplaintStatus(String id, String newStatus, {String? adminRemarks, String? assignedToId, String? assignedTo, List<String>? newInvolvedStaff}) async {
     final updateData = <String, dynamic>{
       'status': newStatus,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -120,6 +125,10 @@ class ComplaintRepository {
     
     if (assignedTo != null) {
       updateData['assignedTo'] = assignedTo;
+    }
+
+    if (newInvolvedStaff != null && newInvolvedStaff.isNotEmpty) {
+      updateData['involvedStaffNames'] = FieldValue.arrayUnion(newInvolvedStaff);
     }
 
     await _firestore.collection('complaints').doc(id).update(updateData);

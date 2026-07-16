@@ -117,7 +117,7 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                     const Text('Select Your Batch Adviser', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedAdviser,
+                      initialValue: _selectedAdviser,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),

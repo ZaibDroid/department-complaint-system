@@ -17,6 +17,7 @@ class ComplaintModel {
   final DateTime? updatedAt;
   final List<String> attachments; // URLs of uploaded files
   final List<Map<String, dynamic>> remarks; // History of remarks
+  final List<String> involvedStaffNames;
 
   ComplaintModel({
     required this.id,
@@ -35,6 +36,7 @@ class ComplaintModel {
     this.updatedAt,
     this.attachments = const [],
     this.remarks = const [],
+    this.involvedStaffNames = const [],
   });
 
   ComplaintModel copyWith({
@@ -54,6 +56,7 @@ class ComplaintModel {
     DateTime? updatedAt,
     List<String>? attachments,
     List<Map<String, dynamic>>? remarks,
+    List<String>? involvedStaffNames,
   }) {
     return ComplaintModel(
       id: id ?? this.id,
@@ -72,6 +75,7 @@ class ComplaintModel {
       updatedAt: updatedAt ?? this.updatedAt,
       attachments: attachments ?? this.attachments,
       remarks: remarks ?? this.remarks,
+      involvedStaffNames: involvedStaffNames ?? this.involvedStaffNames,
     );
   }
 
@@ -93,6 +97,7 @@ class ComplaintModel {
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'attachments': attachments,
       'remarks': remarks,
+      'involvedStaffNames': involvedStaffNames,
     };
   }
 
@@ -118,6 +123,7 @@ class ComplaintModel {
           : (map['updatedAt'] != null ? DateTime.tryParse(map['updatedAt'].toString()) : null),
       attachments: List<String>.from(map['attachments'] ?? []),
       remarks: List<Map<String, dynamic>>.from(map['remarks'] ?? []),
+      involvedStaffNames: List<String>.from(map['involvedStaffNames'] ?? []),
     );
   }
 }

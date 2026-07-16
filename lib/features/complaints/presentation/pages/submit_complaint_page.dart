@@ -83,6 +83,7 @@ class _SubmitComplaintPageState extends ConsumerState<SubmitComplaintPage> {
         priority: 'normal',
         createdAt: DateTime.now(),
         assignedTo: user.adviser,
+        involvedStaffNames: user.adviser != null ? [user.adviser!] : [],
       );
 
       final images = _selectedFiles.map((xfile) => File(xfile.path)).toList();

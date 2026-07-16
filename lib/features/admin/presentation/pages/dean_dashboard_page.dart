@@ -4,6 +4,7 @@ import '../../../../features/dashboard/presentation/widgets/dashboard_app_bar.da
 import '../../../../features/dashboard/presentation/widgets/staff_complaint_card.dart';
 import '../../../../features/complaints/presentation/providers/complaint_provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 
 class DeanDashboardPage extends ConsumerStatefulWidget {
   const DeanDashboardPage({super.key});
@@ -64,7 +65,9 @@ class _DeanDashboardPageState extends ConsumerState<DeanDashboardPage> with Sing
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Error: $e')),
               data: (complaints) {
-                final newComplaints = complaints.where((c) => c.status != 'resolved' && c.status != 'rejected').toList();
+                final user = ref.read(authStateProvider).value;
+                final userName = user?.name ?? '';
+                final newComplaints = complaints.where((c) => c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected').toList();
                 final processedComplaints = complaints.where((c) => c.status == 'resolved' || c.status == 'rejected').toList();
 
                 return TabBarView(

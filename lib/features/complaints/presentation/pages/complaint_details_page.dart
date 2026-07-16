@@ -72,7 +72,7 @@ class _ComplaintDetailsPageState extends ConsumerState<ComplaintDetailsPage> {
                 
                 final success = await ref.read(submitComplaintProvider.notifier).updateStatus(widget.complaint.id, actionType, comment);
                 
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context); // close loading
                   Navigator.pop(context); // close dialog
                   if (success) {
