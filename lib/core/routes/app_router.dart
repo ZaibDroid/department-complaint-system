@@ -32,10 +32,15 @@ import '../../features/complaints/presentation/pages/complaint_archive_page.dart
 import '../../features/complaints/data/models/complaint_model.dart';
 import '../../features/complaints/presentation/pages/complaint_details_page.dart';
 import '../../shared/layouts/main_layout.dart';
+import '../../shared/layouts/chairman_layout.dart';
+import '../../features/admin/presentation/pages/manage_coordinators_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+final isFirstLaunchProvider = Provider<bool>((ref) => false);
+
 final goRouterProvider = Provider<GoRouter>((ref) {
+  final isFirstLaunch = ref.watch(isFirstLaunchProvider);
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: isFirstLaunch ? '/onboarding' : '/',
     routes: [
       GoRoute(
         path: '/',
@@ -78,9 +83,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/dashboard/admin',
         builder: (context, state) => const AdminDashboardPage(),
       ),
-      GoRoute(
-        path: '/dashboard/chairman',
-        builder: (context, state) => const ChairmanDashboardPage(),
+      ShellRoute(
+        builder: (context, state, child) => ChairmanLayout(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard/chairman',
+            builder: (context, state) => const ChairmanDashboardPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/chairman/coordinators',
+            builder: (context, state) => const ManageCoordinatorsPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/chairman/profile',
+            builder: (context, state) => const UserProfilePage(isSubPage: false),
+          ),
+        ]
       ),
       GoRoute(
         path: '/dashboard/adviser',

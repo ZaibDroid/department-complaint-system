@@ -152,16 +152,17 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                       if (user.role == 'Batch Adviser' || user.role == 'Coordinator') ...[
                         TextField(
                           controller: batchController,
-                          decoration: const InputDecoration(labelText: 'Advising Batch No.'),
+                          decoration: InputDecoration(labelText: user.role == 'Coordinator' ? 'Coordinating Batch No.' : 'Advising Batch No.'),
                           keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedSection,
-                          items: sections.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                          onChanged: (val) => setState(() => selectedSection = val),
-                          decoration: const InputDecoration(labelText: 'Advising Section'),
-                        ),
+                        if (user.role == 'Batch Adviser')
+                          DropdownButtonFormField<String>(
+                            initialValue: selectedSection,
+                            items: sections.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            onChanged: (val) => setState(() => selectedSection = val),
+                            decoration: const InputDecoration(labelText: 'Advising Section'),
+                          ),
                       ]
                     ]
                   ],
@@ -524,10 +525,12 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                   _buildTableRow('Department', (user.department != null && user.department!.trim().isNotEmpty) ? user.department! : 'N/A'),
                   const Divider(height: 1),
                   if (user.role == 'Batch Adviser' || user.role == 'Coordinator') ...[
-                    _buildTableRow('Advising Batch', user.batch ?? 'N/A'),
+                    _buildTableRow(user.role == 'Coordinator' ? 'Coordinating Batch' : 'Advising Batch', user.batch ?? 'N/A'),
                     const Divider(height: 1),
-                    _buildTableRow('Advising Section', user.section ?? 'N/A'),
-                    const Divider(height: 1),
+                    if (user.role == 'Batch Adviser') ...[
+                      _buildTableRow('Advising Section', user.section ?? 'N/A'),
+                      const Divider(height: 1),
+                    ],
                   ],
                   _buildTableRow('Contact Number', user.phone ?? 'N/A'),
                 ],

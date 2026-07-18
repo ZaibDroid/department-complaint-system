@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../widgets/onboarding_slide.dart';
 
@@ -32,15 +33,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   ];
 
-  void _nextPage() {
+  void _nextPage() async {
     if (_currentPage < _onboardingData.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeIn,
       );
     } else {
-      // Finished onboarding, go to login
-      context.go('/login');
+      // Finished onboarding, set flag and go to splash
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('dcms_onboarding_complete', true);
+      if (mounted) {
+        context.go('/');
+      }
     }
   }
 

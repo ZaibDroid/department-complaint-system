@@ -98,6 +98,7 @@ class FirebaseAuthRepository {
     required String role,
     String? batch,
     String? section,
+    String? semester,
   }) async {
     try {
       // Create a secondary app instance to avoid logging out the current admin
@@ -122,6 +123,7 @@ class FirebaseAuthRepository {
           status: 'approved',
           batch: batch,
           section: section,
+          semester: semester,
         );
         await _firestore.collection('users').doc(firebaseUser.uid).set(user.toJson());
       }
@@ -130,6 +132,24 @@ class FirebaseAuthRepository {
       await tempApp.delete();
     } catch (e) {
       throw Exception('Failed to create staff account: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateStaffAccount(String uid, {
+    required String name,
+    required String batch,
+    required String section,
+    required String semester,
+  }) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'name': name,
+        'batch': batch,
+        'section': section,
+        'semester': semester,
+      });
+    } catch (e) {
+      throw Exception('Failed to update staff account: ${e.toString()}');
     }
   }
 
@@ -142,6 +162,22 @@ class FirebaseAuthRepository {
       'adviser': adviser,
       'status': 'pending',
     });
+  }
+
+  Future<int> handoverStudents(String oldAdviserName, String newAdviserName) async {
+    final snapshot = await _firestore.collection('users')
+        .where('role', isEqualTo: 'Student')
+        .where('adviser', isEqualTo: oldAdviserName)
+        .get();
+        
+    if (snapshot.docs.isEmpty) return 0;
+
+    final batch = _firestore.batch();
+    for (var doc in snapshot.docs) {
+      batch.update(doc.reference, {'adviser': newAdviserName});
+    }
+    await batch.commit();
+    return snapshot.docs.length;
   }
 
   Future<void> updatePersonalInfo(String uid, {

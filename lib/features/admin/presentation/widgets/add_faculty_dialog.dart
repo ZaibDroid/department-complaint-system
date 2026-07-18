@@ -5,7 +5,9 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 
 class AddFacultyDialog extends ConsumerStatefulWidget {
-  const AddFacultyDialog({super.key});
+  final String defaultRole;
+
+  const AddFacultyDialog({super.key, this.defaultRole = 'Batch Adviser'});
 
   @override
   ConsumerState<AddFacultyDialog> createState() => _AddFacultyDialogState();
@@ -16,6 +18,9 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _batchController = TextEditingController();
+  final _sectionController = TextEditingController();
+  final _semesterController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -23,6 +28,9 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _batchController.dispose();
+    _sectionController.dispose();
+    _semesterController.dispose();
     super.dispose();
   }
 
@@ -71,6 +79,38 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
                 isPassword: true,
                 validator: (val) => val == null || val.length < 6 ? 'Min 6 characters' : null,
               ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      controller: _batchController,
+                      labelText: 'Batch No.',
+                      hintText: 'e.g. 2021',
+                      prefixIcon: const Icon(Icons.numbers),
+                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: AppTextField(
+                      controller: _sectionController,
+                      labelText: 'Section',
+                      hintText: 'e.g. A',
+                      prefixIcon: const Icon(Icons.view_module),
+                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _semesterController,
+                labelText: 'Semester',
+                hintText: 'e.g. BSCS-1',
+                prefixIcon: const Icon(Icons.class_),
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              ),
             ],
           ),
         ),
@@ -100,7 +140,10 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          role: 'Batch Adviser',
+          role: widget.defaultRole,
+          batch: _batchController.text.trim(),
+          section: _sectionController.text.trim(),
+          semester: _semesterController.text.trim(),
         );
         if (mounted) {
           Navigator.pop(context);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../features/auth/domain/entities/user.dart';
+import 'edit_faculty_dialog.dart';
+import 'handover_dialog.dart';
 
 class AdvisersList extends StatelessWidget {
   final List<User> advisers;
@@ -33,49 +35,126 @@ class AdvisersList extends StatelessWidget {
         final adviser = advisers[index];
         final isAssigned = adviser.batch != null && adviser.batch!.isNotEmpty;
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          elevation: 2,
-          shadowColor: Colors.black.withValues(alpha: 0.02),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade100),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-              child: Icon(Icons.person, color: theme.primaryColor),
-            ),
-            title: Text(
-              adviser.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                adviser.email,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
+                    child: Icon(Icons.person, color: theme.primaryColor, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          adviser.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF010F32),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          adviser.email,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isAssigned ? Colors.green.shade50 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isAssigned ? Colors.green.shade200 : Colors.red.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isAssigned ? Icons.check_circle_outline : Icons.error_outline,
+                          size: 14,
+                          color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isAssigned ? '${adviser.semester ?? adviser.batch} (${adviser.section})' : 'Not Assigned',
+                          style: TextStyle(
+                            color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isAssigned ? Colors.green.shade50 : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isAssigned ? Colors.green.shade200 : Colors.red.shade200,
-                ),
+              const SizedBox(height: 12),
+              Divider(color: Colors.grey.shade100, height: 1),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => HandoverDialog(
+                          oldAdviser: adviser,
+                          allAdvisers: advisers,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.transfer_within_a_station, size: 18),
+                    label: const Text('Transfer Students'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => EditFacultyDialog(adviser: adviser),
+                      );
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text('Edit Details'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                isAssigned ? '${adviser.batch} (${adviser.section})' : 'Not Assigned',
-                style: TextStyle(
-                  color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+            ],
           ),
         );
       },

@@ -24,19 +24,15 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage> with Single
     
     _controller.forward();
 
-    // Navigate to onboarding or login after 3 seconds
+    // Load data from the backend here
     Future.delayed(const Duration(seconds: 3), () async {
       if (mounted) {
-        // Check if this is the very first launch (onboarding complete?)
-        final hasCompletedOnboarding = await ref.read(onboardingStateProvider.future);
+        // Fetching initial user data or any other necessary backend data
+        await ref.read(authStateProvider.future);
         
         if (mounted) {
-          if (!hasCompletedOnboarding) {
-            context.go('/onboarding');
-          } else {
-            // Auth provider handles auto-redirecting to dashboard if already logged in!
-            context.go('/login');
-          }
+          // Auth provider handles auto-redirecting to dashboard if already logged in!
+          context.go('/login');
         }
       }
     });
@@ -64,12 +60,13 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage> with Single
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
+                      width: 157,
+                      height: 157,
+                      padding: const EdgeInsets.all(2.0),
+                      decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
+                        shape: BoxShape.circle,
+                        boxShadow: [
                           BoxShadow(
                             color: Colors.black26,
                             blurRadius: 20,
@@ -77,12 +74,14 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage> with Single
                           )
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.account_balance, size: 64, color: Color(0xFF172548)),
+                      child: ClipOval(
+                        child: Transform.translate(
+                          offset: const Offset(0, 5),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.account_balance, size: 64, color: Color(0xFF172548)),
+                          ),
                         ),
                       ),
                     ),

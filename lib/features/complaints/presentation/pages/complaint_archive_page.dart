@@ -16,6 +16,7 @@ class ComplaintArchivePage extends ConsumerStatefulWidget {
 
 class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
   final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'all'; // all, pending, resolved, rejected, forwarded
 
   @override
   void dispose() {
@@ -65,6 +66,22 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All', 'all'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Pending', 'pending'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Resolved', 'resolved'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Rejected', 'rejected'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Forwarded', 'forwarded'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -76,7 +93,12 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
               error: (e, st) => Center(child: Text('Error: $e')),
               data: (complaints) {
                 final archived = complaints.where((c) {
-                  // Filter by search
+                  // Filter by status
+                  if (_selectedFilter != 'all' && c.status.toLowerCase() != _selectedFilter) {
+                    return false;
+                  }
+
+                  // Filter by search (ID, Title, Student Name)
                   final query = _searchController.text.toLowerCase();
                   if (query.isNotEmpty) {
                     if (!c.id.toLowerCase().contains(query) && 
@@ -148,6 +170,29 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _selectedFilter == value;
+    final theme = Theme.of(context);
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedFilter = value);
+        }
+      },
+      selectedColor: theme.primaryColor.withValues(alpha: 0.1),
+      labelStyle: TextStyle(
+        color: isSelected ? theme.primaryColor : Colors.black87,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      backgroundColor: Colors.grey.shade100,
+      side: BorderSide(
+        color: isSelected ? theme.primaryColor : Colors.grey.shade300,
       ),
     );
   }

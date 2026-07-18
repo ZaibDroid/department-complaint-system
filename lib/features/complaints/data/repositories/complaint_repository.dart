@@ -82,28 +82,35 @@ class ComplaintRepository {
       query = query.where('category', isEqualTo: department);
     }
     
-    if (adviserName != null && adviserName.isNotEmpty) {
-      query = query.where(
-        Filter.or(
-          Filter('assignedTo', isEqualTo: adviserName),
-          Filter('involvedStaffNames', arrayContains: adviserName),
-        ),
-      );
-    }
-    
     return query.snapshots().map((snapshot) {
-      final complaints = snapshot.docs
+      var complaints = snapshot.docs
           .map((doc) {
             try {
               return ComplaintModel.fromMap(doc.data(), doc.id);
             } catch (e) {
-              // print('Error parsing department complaint ${doc.id}: $e');
               return null;
             }
           })
           .where((c) => c != null)
           .cast<ComplaintModel>()
           .toList();
+          
+      if (adviserName != null && adviserName.isNotEmpty) {
+        final myNameLower = adviserName.toLowerCase().replaceAll('dr.', '').trim();
+        complaints = complaints.where((c) {
+          final assignedTo = c.assignedTo ?? '';
+          final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
+          bool isAssigned = assignedToLower.isNotEmpty && (assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower));
+          
+          bool isInvolved = c.involvedStaffNames.any((name) {
+            final nameLower = name.toLowerCase().replaceAll('dr.', '').trim();
+            return nameLower.isNotEmpty && (nameLower.contains(myNameLower) || myNameLower.contains(nameLower));
+          });
+          
+          return isAssigned || isInvolved;
+        }).toList();
+      }
+          
       complaints.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return complaints;
     });

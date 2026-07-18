@@ -7,6 +7,7 @@ class User {
   final String? year;
   final String? batch;
   final String? section;
+  final String? semester;
   final String? adviser;
   final bool isCR;
   final String status;
@@ -22,6 +23,7 @@ class User {
     this.year,
     this.batch,
     this.section,
+    this.semester,
     this.adviser,
     this.isCR = false,
     this.status = 'approved',
@@ -39,6 +41,7 @@ class User {
       year: json['year'],
       batch: json['batch'],
       section: json['section'],
+      semester: json['semester'],
       adviser: json['adviser'],
       isCR: json['isCR'] ?? false,
       status: json['status'] ?? 'approved',
@@ -57,6 +60,7 @@ class User {
       'year': year,
       'batch': batch,
       'section': section,
+      'semester': semester,
       'adviser': adviser,
       'isCR': isCR,
       'status': status,

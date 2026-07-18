@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../complaints/presentation/providers/complaint_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../admin/presentation/providers/adviser_assignment_provider.dart';
 
 class StudentDashboardPage extends ConsumerStatefulWidget {
   const StudentDashboardPage({super.key});
@@ -18,7 +19,6 @@ class StudentDashboardPage extends ConsumerStatefulWidget {
 
 class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
   String? _selectedAdviser;
-  final List<String> _advisers = ['Dr. Ali', 'Dr. Usman', 'Dr. Bilal', 'Engr. Sara'];
   bool _isSubmitting = false;
 
   Future<void> _sendAdviserRequest(String uid) async {
@@ -45,6 +45,8 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = ref.watch(authStateProvider).value;
+    final advisersAsync = ref.watch(batchAdvisersStreamProvider);
+    final batchAdvisers = advisersAsync.value ?? [];
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -131,7 +133,12 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                         ),
                       ),
                       hint: const Text('Choose adviser...'),
-                      items: _advisers.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: batchAdvisers.map((a) {
+                        final assignText = a.semester ?? a.batch ?? 'Unassigned';
+                        final sectionText = a.section ?? '';
+                        final display = '${a.name} ($assignText - $sectionText)';
+                        return DropdownMenuItem(value: a.name, child: Text(display));
+                      }).toList(),
                       onChanged: (val) => setState(() => _selectedAdviser = val),
                     ),
                     const SizedBox(height: 24),
@@ -193,7 +200,9 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.push('/complaint_archive');
+                  },
                   child: Text('View all', style: TextStyle(color: theme.primaryColor)),
                 ),
               ],
@@ -203,11 +212,16 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Error loading complaints: $e')),
               data: (complaints) {
-                if (complaints.isEmpty) {
+                final activeComplaints = complaints.where((c) {
+                  final status = c.status.toLowerCase();
+                  return status != 'resolved' && status != 'rejected';
+                }).toList();
+
+                if (activeComplaints.isEmpty) {
                   return const Center(child: Text('No active complaints.'));
                 }
                 return Column(
-                  children: complaints.take(3).map((c) {
+                  children: activeComplaints.take(3).map((c) {
                     ComplaintStatus status;
                     switch (c.status.toLowerCase()) {
                       case 'resolved': status = ComplaintStatus.resolved; break;
@@ -294,6 +308,7 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                     title: 'Filing Guide',
                     subtitle: 'Learn how to file',
                     color: theme.primaryColor,
+                    onTap: () {},
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -303,6 +318,9 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                     title: 'History',
                     subtitle: 'Check past cases',
                     color: Colors.orange,
+                    onTap: () {
+                      context.push('/complaint_archive');
+                    },
                   ),
                 ),
               ],

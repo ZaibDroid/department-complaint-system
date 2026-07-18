@@ -20,7 +20,15 @@ final adviserStudentsProvider = StreamProvider.autoDispose<List<User>>((ref) {
       .where('role', isEqualTo: 'Student')
       .snapshots()
       .map((snapshot) {
-    final students = snapshot.docs.map((doc) => User.fromJson(doc.data())).toList();
+    final students = snapshot.docs.map((doc) {
+      try {
+        final data = doc.data();
+        data['id'] = doc.id; // Ensure id is present
+        return User.fromJson(data);
+      } catch (e) {
+        return null;
+      }
+    }).where((u) => u != null).cast<User>().toList();
     final myNameLower = authState.name.toLowerCase().replaceAll('dr.', '').trim();
     
     return students.where((s) {
@@ -78,10 +86,20 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
 
     final user = ref.read(authStateProvider).value;
     final userName = user?.name ?? '';
+    final myNameLower = userName.toLowerCase().replaceAll('dr.', '').trim();
     
-    final pendingCount = complaints.where((c) => c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected').length;
+    bool isAssignedToMe(String? assignedTo) {
+      if (assignedTo == null || assignedTo.isEmpty) return false;
+      final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
+      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+    }
+    
+    final pendingCount = complaints.where((c) => isAssignedToMe(c.assignedTo) && c.status != 'resolved' && c.status != 'rejected').length;
     final resolvedCount = complaints.where((c) => c.status == 'resolved').length;
-    final forwardedCount = complaints.where((c) => c.assignedTo != userName && c.involvedStaffNames.contains(userName) && c.status != 'resolved').length;
+    final forwardedCount = complaints.where((c) => !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
+      final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
+      return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+    }) && c.status != 'resolved').length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),
@@ -231,10 +249,23 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
   Widget _buildComplaintsList(List<ComplaintModel> complaints, ThemeData theme) {
     final user = ref.read(authStateProvider).value;
     final userName = user?.name ?? '';
+    final myNameLower = userName.toLowerCase().replaceAll('dr.', '').trim();
+    
+    bool isAssignedToMe(String? assignedTo) {
+      if (assignedTo == null || assignedTo.isEmpty) return false;
+      final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
+      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+    }
+
     var filtered = complaints.where((c) {
-      if (_selectedFilter == 'pending') return c.assignedTo == userName && c.status != 'resolved' && c.status != 'rejected';
+      if (_selectedFilter == 'pending') return isAssignedToMe(c.assignedTo) && c.status != 'resolved' && c.status != 'rejected';
       if (_selectedFilter == 'resolved') return c.status == 'resolved';
-      if (_selectedFilter == 'forwarded') return c.assignedTo != userName && c.involvedStaffNames.contains(userName);
+      if (_selectedFilter == 'forwarded') {
+        return !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
+          final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
+          return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+        });
+      }
       if (_selectedFilter == 'processed') return c.status == 'resolved' || c.status == 'rejected';
       return true;
     }).toList();
@@ -248,7 +279,10 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final c = filtered[index];
-        final isPending = c.assignedTo == ref.read(authStateProvider).value?.name && c.status != 'resolved' && c.status != 'rejected';
+        final myNameLower = (ref.read(authStateProvider).value?.name ?? '').toLowerCase().replaceAll('dr.', '').trim();
+        final assignedToLower = (c.assignedTo ?? '').toLowerCase().replaceAll('dr.', '').trim();
+        final isAssignedToMe = assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+        final isPending = isAssignedToMe && c.status != 'resolved' && c.status != 'rejected';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(

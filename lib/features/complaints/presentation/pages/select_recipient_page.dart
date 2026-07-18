@@ -12,17 +12,34 @@ final availableStaffProvider = StreamProvider.autoDispose<List<Map<String, dynam
       .where('role', whereIn: ['Coordinator', 'Chairman', 'Dean', 'Department Office'])
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
+    
+    final staffList = snapshot.docs.map((doc) {
       final data = doc.data();
-      final role = data['role'] ?? 'Staff';
+      final roleStr = data['role']?.toString() ?? 'Staff';
+      final roleLower = roleStr.toLowerCase();
+      
       return {
         'id': doc.id,
         'name': data['name'] ?? 'Unknown',
-        'role': role,
-        'isSelectable': true, // We can customize this based on user role if needed
-        'isRecommended': role == 'Coordinator',
+        'role': roleStr,
+        'isSelectable': roleLower.contains('coordinator') || roleLower.contains('chairman'), 
+        'isRecommended': roleLower.contains('coordinator'),
       };
     }).toList();
+
+    // Inject a Chairman card artificially if one isn't found in the database yet
+    final hasChairman = staffList.any((staff) => (staff['role'] as String).toLowerCase().contains('chairman'));
+    if (!hasChairman) {
+      staffList.add({
+        'id': 'mock_chairman_id',
+        'name': 'Chairman (Pending Setup)',
+        'role': 'Chairman',
+        'isSelectable': true,
+        'isRecommended': false,
+      });
+    }
+
+    return staffList;
   });
 });
 
@@ -98,7 +115,7 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Chip(label: Text('STEP 2 OF 4', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: Color(0xFFEFEDF1)),
+                    Chip(label: Text('STEP 3 OF 4', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: Color(0xFFEFEDF1)),
                     Text('BATCH ACTION', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold, fontSize: 12)),
                   ],
                 ),
@@ -127,7 +144,14 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                     }
                     
                     return Column(
-                      children: staffList.map((staff) {
+                      children: staffList.where((staff) {
+                        // Prevent users from forwarding to their own role (e.g., Coordinator to Coordinator)
+                        final currentUserRole = ref.read(authStateProvider).value?.role ?? '';
+                        if (currentUserRole.toLowerCase() == (staff['role'] as String).toLowerCase()) {
+                          return false;
+                        }
+                        return true;
+                      }).map((staff) {
                         final isSelectable = staff['isSelectable'] as bool;
                         final isSelected = _selectedStaffId == staff['id'];
                         final isRecommended = staff['isRecommended'] as bool;
@@ -174,25 +198,24 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
+                                        Wrap(
+                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          spacing: 8,
+                                          runSpacing: 4,
                                           children: [
                                             Text(staff['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isSelectable ? Colors.black87 : Colors.grey.shade600)),
-                                            if (isRecommended) ...[
-                                              const SizedBox(width: 8),
+                                            if (isRecommended)
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                 decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                                 child: const Text('RECOMMENDED', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
                                               ),
-                                            ],
-                                            if (!isSelectable) ...[
-                                              const SizedBox(width: 8),
+                                            if (!isSelectable)
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                 decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                                 child: const Text('RESTRICTED', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
                                               ),
-                                            ]
                                           ],
                                         ),
                                         const SizedBox(height: 4),
@@ -228,28 +251,9 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                   error: (err, stack) => Center(child: Text('Error: $err')),
                 ),
                 
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.1),
-                    border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: theme.primaryColor),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Batch Advisers are strictly authorized to escalate complaints only to the Chairman or the Coordinator. Direct escalation to the Dean or Department Office is restricted.',
-                          style: TextStyle(fontSize: 13, height: 1.4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
+                
+                // Restriction note removed based on user request
+                const SizedBox(height: 12),
                 const Text('ADDITIONAL COMMENTS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.2)),
                 const SizedBox(height: 12),
                 TextField(

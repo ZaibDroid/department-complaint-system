@@ -82,10 +82,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.school_rounded,
-                    size: 80,
-                    color: theme.primaryColor,
+                  Center(
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 150,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text(

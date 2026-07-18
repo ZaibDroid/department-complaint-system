@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/adviser_assignment_provider.dart';
 import '../widgets/adviser_assignment_form.dart';
 import '../widgets/advisers_list.dart';
+import '../widgets/add_faculty_dialog.dart';
 import '../../../../features/auth/domain/entities/user.dart';
 
 class AssignAdviserPage extends ConsumerStatefulWidget {
@@ -14,7 +15,6 @@ class AssignAdviserPage extends ConsumerStatefulWidget {
 }
 
 class _AssignAdviserPageState extends ConsumerState<AssignAdviserPage> {
-  String _selectedTab = 'assignments'; // 'assignments', 'advisers'
 
   @override
   Widget build(BuildContext context) {
@@ -49,150 +49,31 @@ class _AssignAdviserPageState extends ConsumerState<AssignAdviserPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Segmented Button for Tab Switching (On Top)
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'assignments',
-                        label: Text('By Semester'),
-                        icon: Icon(Icons.class_, size: 18),
-                      ),
-                      ButtonSegment(
-                        value: 'advisers',
-                        label: Text('By Adviser'),
-                        icon: Icon(Icons.people, size: 18),
-                      ),
-                    ],
-                    selected: {_selectedTab},
-                    onSelectionChanged: (newSelection) {
-                      setState(() {
-                        _selectedTab = newSelection.first;
-                      });
-                    },
-                    style: SegmentedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      selectedBackgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-                      selectedForegroundColor: theme.primaryColor,
-                    ),
+                const Text(
+                  'Faculty Advisers',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF010F32),
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // 2. Conditional Tab Views
-                if (_selectedTab == 'assignments') ...[
-                  // Assignment Form Panel
-                  AdviserAssignmentForm(advisers: advisers),
-                  const SizedBox(height: 28),
-                  const Text(
-                    'Current Assignments',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF010F32),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (assignments.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Text(
-                          'No semesters or sections configured.',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: assignments.length,
-                      itemBuilder: (context, index) {
-                        final assignment = assignments[index];
-                        final hasAdviser = assignment.adviserName != null;
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          elevation: 2,
-                          shadowColor: Colors.black.withValues(alpha: 0.02),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade100),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            leading: CircleAvatar(
-                              backgroundColor: hasAdviser 
-                                  ? theme.primaryColor.withValues(alpha: 0.1) 
-                                  : Colors.red.shade50,
-                              child: Icon(
-                                hasAdviser ? Icons.verified_user : Icons.warning_amber_rounded,
-                                color: hasAdviser ? theme.primaryColor : Colors.red,
-                              ),
-                            ),
-                            title: Text(
-                              '${assignment.semester} - Section ${assignment.section}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                hasAdviser ? 'Adviser: ${assignment.adviserName}' : 'Not Assigned',
-                                style: TextStyle(
-                                  color: hasAdviser ? Colors.black87 : Colors.red.shade400,
-                                  fontWeight: hasAdviser ? FontWeight.w500 : FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (hasAdviser)
-                                  IconButton(
-                                    icon: const Icon(Icons.info_outline, color: Colors.blue),
-                                    tooltip: 'Adviser Details',
-                                    onPressed: () {
-                                      final adviserUser = advisers.firstWhere(
-                                        (a) => a.id == assignment.adviserId,
-                                        orElse: () => User(id: '', name: assignment.adviserName ?? 'Unknown', email: 'N/A', role: 'Batch Adviser'),
-                                      );
-                                      _showAdviserDetailsDialog(context, adviserUser, assignment.semester, assignment.section);
-                                    },
-                                  ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.green),
-                                  tooltip: 'Edit Assignment',
-                                  onPressed: () {
-                                    ref.read(selectedAssignmentProvider.notifier).select(
-                                      assignment.semester,
-                                      assignment.section,
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                ] else ...[
-                  const Text(
-                    'Faculty Advisers',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF010F32),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AdvisersList(advisers: advisers),
-                ],
+                const SizedBox(height: 16),
+                AdvisersList(advisers: advisers),
               ],
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => const AddFacultyDialog(),
+          );
+        },
+        icon: const Icon(Icons.person_add, color: Colors.white),
+        label: const Text('Add Adviser', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: theme.primaryColor,
       ),
     );
   }
