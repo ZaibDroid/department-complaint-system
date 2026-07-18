@@ -113,7 +113,7 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
                 ),
               ),
               hint: const Text('Choose new adviser...'),
-              value: _selectedAdviserName,
+              initialValue: _selectedAdviserName,
               items: eligibleAdvisers.map((a) {
                 final batchInfo = a.semester ?? a.batch ?? 'Unassigned';
                 return DropdownMenuItem(

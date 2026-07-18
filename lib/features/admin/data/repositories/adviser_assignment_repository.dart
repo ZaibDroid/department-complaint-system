@@ -29,25 +29,38 @@ class AdviserAssignmentRepository {
     final batchRef = _firestore.collection('users');
     
     // 1. Find if any adviser is currently assigned to this semester + section and unassign them
-    final duplicateQuery = await batchRef
+    final allAdvisersQuery = await batchRef
         .where('role', isEqualTo: 'Batch Adviser')
-        .where('batch', isEqualTo: semester)
-        .where('section', isEqualTo: section)
         .get();
         
-    for (var doc in duplicateQuery.docs) {
-      await doc.reference.update({
-        'batch': null,
-        'section': null,
-      });
+    for (var doc in allAdvisersQuery.docs) {
+      final data = doc.data();
+      final assignedSections = List<Map<String, dynamic>>.from(data['assignedSections'] ?? []);
+      
+      final index = assignedSections.indexWhere(
+        (a) => a['batch'] == semester && a['section'] == section,
+      );
+      
+      if (index != -1) {
+        assignedSections.removeAt(index);
+        await doc.reference.update({'assignedSections': assignedSections});
+      }
     }
     
     // 2. If a new adviser is specified, assign them
     if (adviserId != null && adviserId.isNotEmpty) {
-      await batchRef.doc(adviserId).update({
-        'batch': semester,
-        'section': section,
-      });
+      final newAdviserDoc = await batchRef.doc(adviserId).get();
+      if (newAdviserDoc.exists) {
+        final data = newAdviserDoc.data()!;
+        final assignedSections = List<Map<String, dynamic>>.from(data['assignedSections'] ?? []);
+        
+        if (assignedSections.length >= 4) {
+          throw Exception('This Batch Adviser is already assigned to the maximum of 4 sections.');
+        }
+        
+        assignedSections.add({'batch': semester, 'section': section});
+        await newAdviserDoc.reference.update({'assignedSections': assignedSections});
+      }
     }
   }
 }

@@ -99,6 +99,7 @@ class FirebaseAuthRepository {
     String? batch,
     String? section,
     String? semester,
+    List<Map<String, dynamic>>? assignedSections,
   }) async {
     try {
       // Create a secondary app instance to avoid logging out the current admin
@@ -124,6 +125,7 @@ class FirebaseAuthRepository {
           batch: batch,
           section: section,
           semester: semester,
+          assignedSections: assignedSections,
         );
         await _firestore.collection('users').doc(firebaseUser.uid).set(user.toJson());
       }

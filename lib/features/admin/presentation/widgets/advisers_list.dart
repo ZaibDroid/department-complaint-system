@@ -33,7 +33,8 @@ class AdvisersList extends StatelessWidget {
       itemCount: advisers.length,
       itemBuilder: (context, index) {
         final adviser = advisers[index];
-        final isAssigned = adviser.batch != null && adviser.batch!.isNotEmpty;
+        final hasAssignedSections = adviser.assignedSections != null && adviser.assignedSections!.isNotEmpty;
+        final isAssigned = hasAssignedSections || (adviser.batch != null && adviser.batch!.isNotEmpty);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -84,6 +85,7 @@ class AdvisersList extends StatelessWidget {
                     ),
                   ),
                   Container(
+                    constraints: const BoxConstraints(maxWidth: 160),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isAssigned ? Colors.green.shade50 : Colors.red.shade50,
@@ -101,12 +103,20 @@ class AdvisersList extends StatelessWidget {
                           color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          isAssigned ? '${adviser.semester ?? adviser.batch} (${adviser.section})' : 'Not Assigned',
-                          style: TextStyle(
-                            color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            isAssigned 
+                                ? (hasAssignedSections 
+                                    ? adviser.assignedSections!.map((s) => '${s['batch']} (${s['section']})').join(', ')
+                                    : '${adviser.semester ?? adviser.batch} (${adviser.section})')
+                                : 'Not Assigned',
+                            style: TextStyle(
+                              color: isAssigned ? Colors.green.shade700 : Colors.red.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

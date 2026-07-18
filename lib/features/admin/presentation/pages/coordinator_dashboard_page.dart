@@ -7,6 +7,7 @@ import '../../../../features/complaints/data/models/complaint_model.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
 import '../../../../features/profile/presentation/pages/user_profile_page.dart';
 import 'assign_adviser_page.dart';
+import '../../../../features/batch/presentation/pages/batch_management_portal_page.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 
@@ -102,8 +103,10 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
             ),
           const SizedBox(height: 12),
           Expanded(
-            child: _bottomNavIndex == 2
+            child: _bottomNavIndex == 3
                 ? const UserProfilePage(isSubPage: false)
+                : _bottomNavIndex == 2
+                    ? const BatchManagementPortalPage(isEmbedded: true)
                 : _bottomNavIndex == 1
                     ? const AssignAdviserPage(isEmbedded: true)
                     : asyncComplaints.when(
@@ -130,6 +133,7 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.group_add), label: 'Advisers'),
+          BottomNavigationBarItem(icon: Icon(Icons.class_), label: 'Batches'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

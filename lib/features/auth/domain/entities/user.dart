@@ -13,6 +13,7 @@ class User {
   final String status;
   final String? profileImageUrl;
   final String? phone;
+  final List<Map<String, dynamic>>? assignedSections;
 
   User({
     required this.id,
@@ -29,6 +30,7 @@ class User {
     this.status = 'approved',
     this.profileImageUrl,
     this.phone,
+    this.assignedSections,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,11 @@ class User {
       status: json['status'] ?? 'approved',
       profileImageUrl: json['profileImageUrl'],
       phone: json['phone'],
+      assignedSections: json['assignedSections'] != null 
+          ? List<Map<String, dynamic>>.from(json['assignedSections']) 
+          : (json['batch'] != null && json['section'] != null 
+              ? [{'batch': json['batch'], 'section': json['section']}] 
+              : null),
     );
   }
 
@@ -66,6 +73,7 @@ class User {
       'status': status,
       'profileImageUrl': profileImageUrl,
       'phone': phone,
+      'assignedSections': assignedSections,
     };
   }
 }

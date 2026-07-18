@@ -11,6 +11,16 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
 import '../../../../features/profile/presentation/pages/user_profile_page.dart';
 
+class SelectedAssignmentNotifier extends Notifier<Map<String, dynamic>?> {
+  @override
+  Map<String, dynamic>? build() => null;
+  void setAssignment(Map<String, dynamic>? assignment) => state = assignment;
+}
+
+final selectedAssignmentProvider = NotifierProvider<SelectedAssignmentNotifier, Map<String, dynamic>?>(() {
+  return SelectedAssignmentNotifier();
+});
+
 final adviserStudentsProvider = StreamProvider.autoDispose<List<User>>((ref) {
   final authState = ref.watch(authStateProvider).value;
   if (authState == null) return Stream.value([]);
@@ -30,11 +40,20 @@ final adviserStudentsProvider = StreamProvider.autoDispose<List<User>>((ref) {
       }
     }).where((u) => u != null).cast<User>().toList();
     final myNameLower = authState.name.toLowerCase().replaceAll('dr.', '').trim();
+    final selectedAssignment = ref.watch(selectedAssignmentProvider);
     
     return students.where((s) {
       if (s.adviser == null || s.adviser!.isEmpty) return false;
       final adviserLower = s.adviser!.toLowerCase().replaceAll('dr.', '').trim();
-      return adviserLower.contains(myNameLower) || myNameLower.contains(adviserLower);
+      final matchesName = adviserLower.contains(myNameLower) || myNameLower.contains(adviserLower);
+      
+      if (!matchesName) return false;
+      
+      if (selectedAssignment != null) {
+        return s.batch == selectedAssignment['batch'] && s.section == selectedAssignment['section'];
+      }
+      
+      return true;
     }).toList();
   });
 });
@@ -110,7 +129,39 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
-                if (_bottomNavIndex == 0)
+                if (_bottomNavIndex == 0) ...[
+                  if (user?.assignedSections != null && user!.assignedSections!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: DropdownButtonFormField<Map<String, dynamic>>(
+                        initialValue: ref.watch(selectedAssignmentProvider),
+                        decoration: InputDecoration(
+                          labelText: 'Filter by Batch & Section',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          prefixIcon: const Icon(Icons.filter_list),
+                        ),
+                        items: [
+                          const DropdownMenuItem<Map<String, dynamic>>(
+                            value: null,
+                            child: Text('All Assigned Sections'),
+                          ),
+                          ...user.assignedSections!.map((assignment) {
+                            return DropdownMenuItem<Map<String, dynamic>>(
+                              value: assignment,
+                              child: Text('${assignment['batch']} - Section ${assignment['section']}'),
+                            );
+                          }),
+                        ],
+                        onChanged: (val) {
+                          ref.read(selectedAssignmentProvider.notifier).setAssignment(val);
+                        },
+                      ),
+                    ),
                   Row(
                     children: [
                       Expanded(
@@ -147,6 +198,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
                       ),
                     ],
                   ),
+                ],
               ],
             ),
           ),

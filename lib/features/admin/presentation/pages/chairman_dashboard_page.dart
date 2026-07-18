@@ -7,6 +7,7 @@ import '../../../../features/complaints/presentation/providers/complaint_provide
 import '../../../../features/complaints/data/models/complaint_model.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../widgets/chairman_adviser_table.dart';
 
 class ChairmanDashboardPage extends ConsumerStatefulWidget {
   const ChairmanDashboardPage({super.key});
@@ -96,6 +97,8 @@ class _ChairmanDashboardPageState extends ConsumerState<ChairmanDashboardPage> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          const ChairmanAdviserTable(),
           const SizedBox(height: 12),
           Expanded(
             child: asyncComplaints.when(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/adviser_assignment_provider.dart';
-import '../widgets/adviser_assignment_form.dart';
 import '../widgets/advisers_list.dart';
 import '../widgets/add_faculty_dialog.dart';
 import '../../../../features/auth/domain/entities/user.dart';
@@ -19,7 +18,6 @@ class _AssignAdviserPageState extends ConsumerState<AssignAdviserPage> {
   @override
   Widget build(BuildContext context) {
     final advisersAsync = ref.watch(batchAdvisersStreamProvider);
-    final assignments = ref.watch(adviserAssignmentsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -78,77 +76,4 @@ class _AssignAdviserPageState extends ConsumerState<AssignAdviserPage> {
     );
   }
 
-  void _showAdviserDetailsDialog(
-    BuildContext context,
-    User adviser,
-    String semester,
-    String section,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.person, color: Colors.blue),
-              SizedBox(width: 10),
-              Text(
-                'Adviser Details',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _detailRow(Icons.account_circle, 'Name', adviser.name),
-              const Divider(height: 24),
-              _detailRow(Icons.email, 'Email', adviser.email),
-              const Divider(height: 24),
-              _detailRow(Icons.class_, 'Assigned Semester', semester),
-              const Divider(height: 24),
-              _detailRow(Icons.view_module, 'Section', section),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.grey.shade600, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF010F32),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }
