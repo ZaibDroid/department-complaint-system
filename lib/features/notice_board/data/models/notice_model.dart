@@ -9,8 +9,11 @@ class NoticeModel {
   final String senderId;
   final String senderName;
   final String? targetYear;
-  final String? targetBatch;
-  final String? targetSection;
+  final List<String>? targetBatches;
+  final List<String>? targetSections;
+  final List<String>? targetRoles;
+  final bool? targetCRsOnly;
+  final List<String>? attachments;
 
   NoticeModel({
     required this.id,
@@ -21,8 +24,11 @@ class NoticeModel {
     required this.senderId,
     required this.senderName,
     this.targetYear,
-    this.targetBatch,
-    this.targetSection,
+    this.targetBatches,
+    this.targetSections,
+    this.targetRoles,
+    this.targetCRsOnly,
+    this.attachments,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,8 +41,11 @@ class NoticeModel {
       'senderId': senderId,
       'senderName': senderName,
       'targetYear': targetYear,
-      'targetBatch': targetBatch,
-      'targetSection': targetSection,
+      'targetBatches': targetBatches,
+      'targetSections': targetSections,
+      'targetRoles': targetRoles,
+      'targetCRsOnly': targetCRsOnly,
+      'attachments': attachments,
     };
   }
 
@@ -50,8 +59,11 @@ class NoticeModel {
       senderId: map['senderId'] ?? '',
       senderName: map['senderName'] ?? '',
       targetYear: map['targetYear'],
-      targetBatch: map['targetBatch'],
-      targetSection: map['targetSection'],
+      targetBatches: map['targetBatches'] != null ? List<String>.from(map['targetBatches']) : null,
+      targetSections: map['targetSections'] != null ? List<String>.from(map['targetSections']) : null,
+      targetRoles: map['targetRoles'] != null ? List<String>.from(map['targetRoles']) : null,
+      targetCRsOnly: map['targetCRsOnly'],
+      attachments: map['attachments'] != null ? List<String>.from(map['attachments']) : null,
     );
   }
 }

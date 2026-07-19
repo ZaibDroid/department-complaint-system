@@ -122,7 +122,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        // TODO: Implement forgot password
                       },
                       child: const Text("Forgot Password?"),
                     ),

@@ -10,8 +10,9 @@ class ChairmanLayout extends ConsumerWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     if (location == '/dashboard/chairman') return 0;
-    if (location.startsWith('/dashboard/chairman/coordinators')) return 1;
-    if (location.startsWith('/dashboard/chairman/profile')) return 2;
+    if (location.startsWith('/dashboard/chairman/announcements')) return 1;
+    if (location.startsWith('/dashboard/chairman/coordinators')) return 2;
+    if (location.startsWith('/dashboard/chairman/profile')) return 3;
     return 0;
   }
 
@@ -21,9 +22,12 @@ class ChairmanLayout extends ConsumerWidget {
         context.go('/dashboard/chairman');
         break;
       case 1:
-        context.go('/dashboard/chairman/coordinators');
+        context.go('/dashboard/chairman/announcements');
         break;
       case 2:
+        context.go('/dashboard/chairman/coordinators');
+        break;
+      case 3:
         context.go('/dashboard/chairman/profile');
         break;
     }
@@ -44,6 +48,7 @@ class ChairmanLayout extends ConsumerWidget {
         showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Announcements'),
           BottomNavigationBarItem(icon: Icon(Icons.group_add), label: 'Add Coordinator'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],

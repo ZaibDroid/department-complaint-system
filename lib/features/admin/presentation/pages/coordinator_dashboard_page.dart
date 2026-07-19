@@ -10,6 +10,7 @@ import 'assign_adviser_page.dart';
 import '../../../../features/batch/presentation/pages/batch_management_portal_page.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/notice_board/presentation/pages/staff_notice_board_page.dart';
 
 class CoordinatorDashboardPage extends ConsumerStatefulWidget {
   const CoordinatorDashboardPage({super.key});
@@ -103,8 +104,10 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
             ),
           const SizedBox(height: 12),
           Expanded(
-            child: _bottomNavIndex == 3
+            child: _bottomNavIndex == 4
                 ? const UserProfilePage(isSubPage: false)
+                : _bottomNavIndex == 3
+                    ? const StaffNoticeBoardPage()
                 : _bottomNavIndex == 2
                     ? const BatchManagementPortalPage(isEmbedded: true)
                 : _bottomNavIndex == 1
@@ -134,6 +137,7 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.group_add), label: 'Advisers'),
           BottomNavigationBarItem(icon: Icon(Icons.class_), label: 'Batches'),
+          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Notices'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

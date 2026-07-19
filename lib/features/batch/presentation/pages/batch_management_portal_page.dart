@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/batch_provider.dart';
 import '../../../admin/presentation/providers/adviser_assignment_provider.dart';
-import '../../../admin/presentation/widgets/adviser_assignment_form.dart';
-import '../../../auth/domain/entities/user.dart';
+
 import '../../data/repositories/batch_repository.dart';
 import '../../../admin/domain/entities/adviser_assignment.dart';
+import '../../domain/entities/batch_model.dart';
 
 class BatchManagementPortalPage extends ConsumerStatefulWidget {
   final bool isEmbedded;
@@ -66,26 +66,9 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
     }
   }
 
-  void _showAdviserAssignmentDialog(String semester, String section, List<User> advisers) {
-    ref.read(selectedAssignmentProvider.notifier).select(semester, section);
-    
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: AdviserAssignmentForm(advisers: advisers),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final batchesAsync = ref.watch(batchesStreamProvider);
-    final assignmentsAsync = ref.watch(batchAdvisersStreamProvider);
     final assignments = ref.watch(adviserAssignmentsProvider);
 
     return Scaffold(
@@ -125,7 +108,7 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withOpacity(0.2),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -176,7 +159,7 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 24, offset: const Offset(0, 8)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 24, offset: const Offset(0, 8)),
                   ],
                 ),
                 padding: const EdgeInsets.all(28),
@@ -315,7 +298,7 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
@@ -340,25 +323,64 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                                     Text(batch.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                                   ],
                                 ),
-                                InkWell(
-                                  onTap: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                        title: const Text('Delete Batch?'),
-                                        content: const Text('This will remove the batch and its sections. Continue?'),
-                                        actions: [
-                                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-                                        ],
-                                      ),
-                                    );
-                                    if (confirm == true) {
-                                      await ref.read(batchRepositoryProvider).deleteBatch(batch.id);
-                                    }
-                                  },
-                                  child: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                                Row(
+                                  children: [
+                                    InkWell(
+                                      onTap: () async {
+                                        final sectionController = TextEditingController();
+                                        final newSection = await showDialog<String>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                            title: const Text('Add Section'),
+                                            content: TextField(
+                                              controller: sectionController,
+                                              decoration: const InputDecoration(hintText: 'e.g., C'),
+                                            ),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, sectionController.text.trim()), 
+                                                child: const Text('Add')
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (newSection != null && newSection.isNotEmpty) {
+                                          if (batch.sections.contains(newSection)) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Section already exists')));
+                                            }
+                                          } else {
+                                            final updatedBatch = BatchModel(id: batch.id, name: batch.name, sections: [...batch.sections, newSection]);
+                                            await ref.read(batchRepositoryProvider).updateBatch(updatedBatch);
+                                          }
+                                        }
+                                      },
+                                      child: const Icon(Icons.add_circle_outline, color: Color(0xFF10B981), size: 20),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    InkWell(
+                                      onTap: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                            title: const Text('Delete Batch?'),
+                                            content: const Text('This will remove the batch and its sections. Continue?'),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          await ref.read(batchRepositoryProvider).deleteBatch(batch.id);
+                                        }
+                                      },
+                                      child: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -391,7 +413,7 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                               return Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: sIndex.isEven ? Colors.white : const Color(0xFFF8FAFC).withOpacity(0.5),
+                                  color: sIndex.isEven ? Colors.white : const Color(0xFFF8FAFC).withValues(alpha: 0.5),
                                   border: sIndex != batch.sections.length - 1 ? const Border(bottom: BorderSide(color: Color(0xFFF1F5F9))) : null,
                                 ),
                                 child: Row(
@@ -407,6 +429,28 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                                       child: isAssigned
                                           ? Text(assignment.adviserName ?? '', style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)
                                           : const Text('Not Assigned', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontStyle: FontStyle.italic)),
+                                    ),
+                                    InkWell(
+                                      onTap: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                            title: const Text('Delete Section?'),
+                                            content: Text('Remove section $section from batch ${batch.name}?'),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          final newSections = batch.sections.where((s) => s != section).toList();
+                                          final updatedBatch = BatchModel(id: batch.id, name: batch.name, sections: newSections);
+                                          await ref.read(batchRepositoryProvider).updateBatch(updatedBatch);
+                                        }
+                                      },
+                                      child: const Icon(Icons.remove_circle_outline, color: Color(0xFFEF4444), size: 18),
                                     ),
                                   ],
                                 ),

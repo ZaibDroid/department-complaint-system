@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/adviser_assignment_provider.dart';
 import '../widgets/advisers_list.dart';
 import '../widgets/add_faculty_dialog.dart';
-import '../../../../features/auth/domain/entities/user.dart';
+
 
 class AssignAdviserPage extends ConsumerStatefulWidget {
   final bool isEmbedded;

@@ -5,6 +5,8 @@ import '../../../../features/dashboard/presentation/widgets/staff_complaint_card
 import '../../../../features/complaints/presentation/providers/complaint_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/notice_board/presentation/pages/staff_notice_board_page.dart';
+import '../../../../features/profile/presentation/pages/user_profile_page.dart';
 
 class DeanDashboardPage extends ConsumerStatefulWidget {
   const DeanDashboardPage({super.key});
@@ -15,6 +17,7 @@ class DeanDashboardPage extends ConsumerStatefulWidget {
 
 class _DeanDashboardPageState extends ConsumerState<DeanDashboardPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _bottomNavIndex = 0;
 
   @override
   void initState() {
@@ -60,7 +63,7 @@ class _DeanDashboardPageState extends ConsumerState<DeanDashboardPage> with Sing
               ],
             ),
           ),
-          Expanded(
+          _bottomNavIndex == 0 ? Expanded(
             child: asyncComplaints.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Error: $e')),
@@ -117,7 +120,27 @@ class _DeanDashboardPageState extends ConsumerState<DeanDashboardPage> with Sing
                 );
               },
             ),
+          ) : Expanded(
+            child: _bottomNavIndex == 1
+                ? const StaffNoticeBoardPage()
+                : const UserProfilePage(isSubPage: false),
           ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _bottomNavIndex,
+        onTap: (index) {
+          setState(() {
+            _bottomNavIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: theme.primaryColor,
+        unselectedItemColor: Colors.grey.shade400,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Notices'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

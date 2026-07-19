@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/notice_board_card.dart';
 import '../providers/notice_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class StudentNoticeBoardPage extends ConsumerStatefulWidget {
   const StudentNoticeBoardPage({super.key});
@@ -12,7 +14,7 @@ class StudentNoticeBoardPage extends ConsumerStatefulWidget {
 
 class _StudentNoticeBoardPageState extends ConsumerState<StudentNoticeBoardPage> {
   String _selectedFilter = 'All';
-  final List<String> _filters = ['All', 'Academic', 'Events', 'Urgent'];
+  final List<String> _filters = ['All', 'General Announcement', 'Academic', 'Urgent', 'Events', 'Administrative', 'Internship', 'Other'];
 
   @override
   Widget build(BuildContext context) {
@@ -87,9 +89,32 @@ class _StudentNoticeBoardPageState extends ConsumerState<StudentNoticeBoardPage>
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (notices) {
-                final filteredNotices = _selectedFilter == 'All' 
-                    ? notices 
-                    : notices.where((n) => n.tag == _selectedFilter).toList();
+                final user = ref.read(authStateProvider).value;
+                if (user == null) return const Center(child: Text('Not authenticated'));
+
+                final filteredNotices = notices.where((n) {
+                  // 1. Check Role target
+                  if (n.targetRoles != null && n.targetRoles!.isNotEmpty) {
+                    if (!n.targetRoles!.contains('Student')) return false;
+                  }
+
+                  // 2. Check Student specific constraints
+                  if (n.targetRoles != null && n.targetRoles!.contains('Student')) {
+                    if (n.targetCRsOnly == true && user.isCR == false) return false;
+                    
+                    if (n.targetBatches != null && n.targetBatches!.isNotEmpty) {
+                      if (!n.targetBatches!.contains(user.batch)) return false;
+                    }
+                    if (n.targetSections != null && n.targetSections!.isNotEmpty) {
+                      if (!n.targetSections!.contains(user.section)) return false;
+                    }
+                  }
+
+                  // 3. Apply the UI selected category filter
+                  if (_selectedFilter != 'All' && n.tag != _selectedFilter) return false;
+
+                  return true;
+                }).toList();
                 
                 if (filteredNotices.isEmpty) {
                   return const Center(child: Text('No notices found.'));
@@ -115,7 +140,10 @@ class _StudentNoticeBoardPageState extends ConsumerState<StudentNoticeBoardPage>
                       sender: notice.senderName,
                       senderIcon: Icons.person,
                       isUrgent: notice.tag == 'Urgent',
-                      onTap: () {},
+                      attachments: notice.attachments,
+                      onTap: () {
+                        context.push('/notice_details', extra: notice);
+                      },
                     );
                   },
                 );

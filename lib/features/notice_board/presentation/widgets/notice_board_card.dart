@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class NoticeBoardCard extends StatelessWidget {
   final String title;
@@ -8,6 +9,7 @@ class NoticeBoardCard extends StatelessWidget {
   final String sender;
   final IconData senderIcon;
   final bool isUrgent;
+  final List<String>? attachments;
   final VoidCallback onTap;
 
   const NoticeBoardCard({
@@ -19,6 +21,7 @@ class NoticeBoardCard extends StatelessWidget {
     required this.sender,
     required this.senderIcon,
     this.isUrgent = false,
+    this.attachments,
     required this.onTap,
   });
 
@@ -109,7 +112,25 @@ class NoticeBoardCard extends StatelessWidget {
                 color: theme.primaryColor,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            if (attachments != null && attachments!.isNotEmpty) ...[
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: attachments!.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, attachIdx) {
+                    final b64 = attachments![attachIdx].split(',').last;
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(base64Decode(b64), width: 120, height: 120, fit: BoxFit.cover),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Text(
               description,
               maxLines: 2,

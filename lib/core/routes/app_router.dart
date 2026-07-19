@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/onboarding_page.dart';
@@ -19,6 +20,7 @@ import '../../features/notifications/presentation/pages/notification_center_page
 import '../../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../features/settings/presentation/pages/system_settings_page.dart';
 import '../../features/notice_board/presentation/pages/notice_details_page.dart';
+import '../../features/notice_board/data/models/notice_model.dart';
 import '../../features/users/presentation/pages/staff_management_portal_page.dart';
 import '../../features/batch/presentation/pages/batch_management_portal_page.dart';
 import '../../features/admin/presentation/pages/role_permission_editor_page.dart';
@@ -34,7 +36,10 @@ import '../../features/complaints/presentation/pages/complaint_details_page.dart
 import '../../shared/layouts/main_layout.dart';
 import '../../shared/layouts/chairman_layout.dart';
 import '../../features/admin/presentation/pages/manage_coordinators_page.dart';
+import '../../features/admin/presentation/pages/chairman_announcements_page.dart';
+import '../../features/admin/presentation/pages/create_announcement_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 final isFirstLaunchProvider = Provider<bool>((ref) => false);
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -91,6 +96,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ChairmanDashboardPage(),
           ),
           GoRoute(
+            path: '/dashboard/chairman/announcements',
+            builder: (context, state) => const ChairmanAnnouncementsPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/chairman/create_announcement',
+            builder: (context, state) => const CreateAnnouncementPage(),
+          ),
+          GoRoute(
             path: '/dashboard/chairman/coordinators',
             builder: (context, state) => const ManageCoordinatorsPage(),
           ),
@@ -138,7 +151,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/notice_details',
-        builder: (context, state) => const NoticeDetailsPage(),
+        builder: (context, state) {
+          if (state.extra is! NoticeModel) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text("Notice details unavailable. Please go back and try again.")),
+            );
+          }
+          final notice = state.extra as NoticeModel;
+          return NoticeDetailsPage(notice: notice);
+        },
       ),
       GoRoute(
         path: '/staff_management',

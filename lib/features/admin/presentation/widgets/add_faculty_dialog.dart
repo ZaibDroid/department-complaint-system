@@ -86,7 +86,7 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedBatch,
+                      initialValue: _selectedBatch,
                       decoration: InputDecoration(
                         labelText: 'Batch No.',
                         prefixIcon: const Icon(Icons.numbers),
@@ -109,7 +109,7 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedSection,
+                      initialValue: _selectedSection,
                       decoration: InputDecoration(
                         labelText: 'Section',
                         prefixIcon: const Icon(Icons.view_module),

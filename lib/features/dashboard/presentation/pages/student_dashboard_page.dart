@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/complaint_status_card.dart';
-import '../widgets/notice_card.dart';
+
 import '../widgets/dashboard_app_bar.dart';
 import '../widgets/quick_action_card.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../complaints/presentation/providers/complaint_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../admin/presentation/providers/adviser_assignment_provider.dart';
+import '../../../notice_board/presentation/providers/notice_provider.dart';
+import '../../../notice_board/presentation/widgets/notice_board_card.dart';
 
 class StudentDashboardPage extends ConsumerStatefulWidget {
   const StudentDashboardPage({super.key});
@@ -270,32 +272,69 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                   ],
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.push('/student_notices');
+                  },
                   child: Text('See archives', style: TextStyle(color: theme.primaryColor)),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 220,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                children: const [
-                  NoticeCard(
-                    type: NoticeType.academic,
-                    title: 'System Maintenance: Grade Portal Down',
-                    description: 'The grade portal will be offline this Sunday from 02:00 to 06:00 for security updates.',
-                    date: 'Oct 24, 2023',
-                  ),
-                  NoticeCard(
-                    type: NoticeType.campusLife,
-                    title: 'Annual Sports Fest Registration',
-                    description: 'Registration for the upcoming Sports Fest is now open at the Student Union center.',
-                    date: 'Oct 22, 2023',
-                  ),
-                ],
-              ),
+            ref.watch(noticesStreamProvider).when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Center(child: Text('Error loading notices: $e')),
+              data: (notices) {
+                final studentBatch = user.batch ?? '';
+                final studentSection = user.section ?? '';
+                final isCR = user.isCR;
+
+                final myNotices = notices.where((n) {
+                  // If explicitly targeted roles exist but don't include Student, skip
+                  if (n.targetRoles != null && n.targetRoles!.isNotEmpty && !n.targetRoles!.contains('Student')) {
+                    return false;
+                  }
+
+                  // If it's targeted at Students, check student-specific constraints
+                  if (n.targetRoles != null && n.targetRoles!.contains('Student')) {
+                    if (n.targetCRsOnly == true && isCR == false) return false;
+                    
+                    if (n.targetBatches != null && n.targetBatches!.isNotEmpty) {
+                      if (!n.targetBatches!.contains(studentBatch)) return false;
+                    }
+                    if (n.targetSections != null && n.targetSections!.isNotEmpty) {
+                      if (!n.targetSections!.contains(studentSection)) return false;
+                    }
+                  }
+                  return true;
+                }).toList();
+
+                if (myNotices.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text('No recent notices', style: TextStyle(color: Colors.grey))),
+                  );
+                }
+
+                return Column(
+                  children: myNotices.take(2).map((notice) {
+                    final date = notice.createdAt;
+                    final dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+                    
+                    return NoticeBoardCard(
+                      title: notice.title,
+                      description: notice.description,
+                      tag: notice.tag,
+                      date: dateStr,
+                      sender: notice.senderName,
+                      senderIcon: Icons.person,
+                      isUrgent: notice.tag == 'Urgent',
+                      attachments: notice.attachments,
+                      onTap: () {
+                        context.push('/notice_details', extra: notice);
+                      },
+                    );
+                  }).toList(),
+                );
+              },
             ),
             const SizedBox(height: 32),
 

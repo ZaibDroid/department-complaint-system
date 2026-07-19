@@ -10,6 +10,7 @@ import '../../../../features/auth/domain/entities/user.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
 import '../../../../features/profile/presentation/pages/user_profile_page.dart';
+import '../../../../features/notice_board/presentation/pages/staff_notice_board_page.dart';
 
 class SelectedAssignmentNotifier extends Notifier<Map<String, dynamic>?> {
   @override
@@ -205,8 +206,10 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
           const SizedBox(height: 12),
           
           Expanded(
-            child: _bottomNavIndex == 2
+            child: _bottomNavIndex == 3
                 ? const UserProfilePage(isSubPage: false)
+                : _bottomNavIndex == 2
+                ? const StaffNoticeBoardPage()
                 : _selectedFilter == 'students'
                 ? _buildStudentsList(students, theme)
                 : _buildComplaintsList(complaints, theme),
@@ -246,6 +249,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
             ),
             label: 'Requests',
           ),
+          const BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Notices'),
           const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
