@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/batch/presentation/providers/batch_provider.dart';
 
 class AddFacultyDialog extends ConsumerStatefulWidget {
   final String defaultRole;
@@ -18,9 +19,9 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _batchController = TextEditingController();
-  final _sectionController = TextEditingController();
-  final _semesterController = TextEditingController();
+  
+  String? _selectedBatch;
+  String? _selectedSection;
   bool _isLoading = false;
 
   @override
@@ -28,14 +29,14 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _batchController.dispose();
-    _sectionController.dispose();
-    _semesterController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final batchesAsync = ref.watch(batchesStreamProvider);
+    final batches = batchesAsync.value ?? [];
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Row(
@@ -81,35 +82,55 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
               ),
               const SizedBox(height: 16),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: AppTextField(
-                      controller: _batchController,
-                      labelText: 'Batch No.',
-                      hintText: 'e.g. 2021',
-                      prefixIcon: const Icon(Icons.numbers),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedBatch,
+                      decoration: InputDecoration(
+                        labelText: 'Batch No.',
+                        prefixIcon: const Icon(Icons.numbers),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      ),
+                      items: batches.map((b) => DropdownMenuItem(
+                        value: b.name,
+                        child: Text(b.name, overflow: TextOverflow.ellipsis),
+                      )).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedBatch = val;
+                          _selectedSection = null;
+                        });
+                      },
+                      validator: (val) => val == null ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: AppTextField(
-                      controller: _sectionController,
-                      labelText: 'Section',
-                      hintText: 'e.g. A',
-                      prefixIcon: const Icon(Icons.view_module),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedSection,
+                      decoration: InputDecoration(
+                        labelText: 'Section',
+                        prefixIcon: const Icon(Icons.view_module),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      ),
+                      items: _selectedBatch == null 
+                          ? [] 
+                          : batches.firstWhere((b) => b.name == _selectedBatch).sections.map((s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(s),
+                            )).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedSection = val;
+                        });
+                      },
+                      validator: (val) => val == null ? 'Required' : null,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                controller: _semesterController,
-                labelText: 'Semester',
-                hintText: 'e.g. BSCS-1',
-                prefixIcon: const Icon(Icons.class_),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
             ],
           ),
@@ -141,9 +162,12 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
           role: widget.defaultRole,
-          batch: _batchController.text.trim(),
-          section: _sectionController.text.trim(),
-          semester: _semesterController.text.trim(),
+          batch: _selectedBatch,
+          section: _selectedSection,
+          assignedSections: [
+            if (_selectedBatch != null && _selectedSection != null)
+              {'batch': _selectedBatch, 'section': _selectedSection}
+          ],
         );
         if (mounted) {
           Navigator.pop(context);

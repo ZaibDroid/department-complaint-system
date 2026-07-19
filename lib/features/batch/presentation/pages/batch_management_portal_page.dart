@@ -372,8 +372,6 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                                 SizedBox(width: 40, child: Text('Sec', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
                                 SizedBox(width: 16),
                                 Expanded(child: Text('Adviser', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-                                SizedBox(width: 16),
-                                SizedBox(width: 60, child: Text('Action', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
                               ],
                             ),
                           ),
@@ -409,33 +407,6 @@ class _BatchManagementPortalPageState extends ConsumerState<BatchManagementPorta
                                       child: isAssigned
                                           ? Text(assignment.adviserName ?? '', style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)
                                           : const Text('Not Assigned', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontStyle: FontStyle.italic)),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    // Action
-                                    Container(
-                                      width: 60,
-                                      alignment: Alignment.centerRight,
-                                      child: InkWell(
-                                        onTap: () {
-                                          _showAdviserAssignmentDialog(batch.name, section, assignmentsAsync.value ?? []);
-                                        },
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: isAssigned ? const Color(0xFFF1F5F9) : const Color(0xFFEEF2FF),
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            isAssigned ? 'Edit' : 'Add', 
-                                            style: TextStyle(
-                                              fontSize: 12, 
-                                              fontWeight: FontWeight.bold, 
-                                              color: isAssigned ? const Color(0xFF64748B) : const Color(0xFF4F46E5)
-                                            ),
-                                          ),
-                                        ),
-                                      ),
                                     ),
                                   ],
                                 ),

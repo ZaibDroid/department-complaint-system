@@ -107,7 +107,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     hintText: "e.g. 23mdbcs495@uetmardan.edu.pk",
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: const Icon(Icons.email_outlined),
-                    validator: AppValidators.universityEmail,
+                    validator: AppValidators.loginEmail,
                   ),
                   const SizedBox(height: 16),
                   AppTextField(
