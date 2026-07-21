@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../features/auth/domain/entities/user.dart';
 import 'edit_faculty_dialog.dart';
 import 'handover_dialog.dart';
+import 'delete_adviser_dialog.dart';
 
 class AdvisersList extends StatelessWidget {
   final List<User> advisers;
@@ -127,8 +128,10 @@ class AdvisersList extends StatelessWidget {
               const SizedBox(height: 12),
               Divider(color: Colors.grey.shade100, height: 1),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   TextButton.icon(
                     onPressed: () {
@@ -141,13 +144,12 @@ class AdvisersList extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.transfer_within_a_station, size: 18),
-                    label: const Text('Transfer Students'),
+                    label: const Text('Transfer'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.orange.shade700,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () {
                       showDialog(
@@ -156,9 +158,26 @@ class AdvisersList extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit Details'),
+                    label: const Text('Edit'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.blue.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => DeleteAdviserDialog(
+                          adviserToDelete: adviser,
+                          allAdvisers: advisers,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delete, size: 18),
+                    label: const Text('Delete'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),

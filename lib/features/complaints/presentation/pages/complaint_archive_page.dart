@@ -8,7 +8,8 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class ComplaintArchivePage extends ConsumerStatefulWidget {
-  const ComplaintArchivePage({super.key});
+  final String initialFilter;
+  const ComplaintArchivePage({super.key, this.initialFilter = 'all'});
 
   @override
   ConsumerState<ComplaintArchivePage> createState() => _ComplaintArchivePageState();
@@ -19,6 +20,12 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
   String _selectedFilter = 'all'; // all, pending, resolved, rejected, forwarded
 
   @override
+  void initState() {
+    super.initState();
+    _selectedFilter = widget.initialFilter;
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -27,8 +34,13 @@ class _ComplaintArchivePageState extends ConsumerState<ComplaintArchivePage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider).value;
-    final isStudent = authState?.role.toLowerCase() == 'student';
-    final asyncComplaints = isStudent ? ref.watch(studentComplaintsProvider) : ref.watch(departmentComplaintsProvider);
+    final role = authState?.role.toLowerCase() ?? '';
+    final isStudent = role == 'student';
+    final isAdmin = role == 'admin';
+    
+    final asyncComplaints = isAdmin 
+        ? ref.watch(allComplaintsProvider) 
+        : (isStudent ? ref.watch(studentComplaintsProvider) : ref.watch(departmentComplaintsProvider));
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),

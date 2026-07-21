@@ -155,6 +155,14 @@ class FirebaseAuthRepository {
     }
   }
 
+  Future<void> deleteStaffAccount(String uid) async {
+    try {
+      await _firestore.collection('users').doc(uid).delete();
+    } catch (e) {
+      throw Exception('Failed to delete staff account: ${e.toString()}');
+    }
+  }
+
   Future<void> updateUserStatus(String uid, String status) async {
     await _firestore.collection('users').doc(uid).update({'status': status});
   }

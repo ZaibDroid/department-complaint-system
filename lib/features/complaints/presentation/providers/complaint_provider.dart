@@ -31,6 +31,19 @@ final departmentComplaintsProvider = StreamProvider<List<ComplaintModel>>((ref) 
   return repository.streamDepartmentComplaints(adviserName: user.name);
 });
 
+// Provides the list of all complaints in the system (typically for Admins)
+final allComplaintsProvider = StreamProvider<List<ComplaintModel>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final user = authState.value;
+  
+  if (user == null || user.role.toLowerCase() != 'admin') {
+    return Stream.value([]);
+  }
+  
+  final repository = ref.watch(complaintRepositoryProvider);
+  return repository.streamAllComplaints();
+});
+
 // AsyncNotifier for submitting a complaint to handle loading state from UI
 class SubmitComplaintNotifier extends AsyncNotifier<void> {
   late final ComplaintRepository _repository;

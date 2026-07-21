@@ -15,28 +15,24 @@ final availableStaffProvider = StreamProvider.autoDispose<List<Map<String, dynam
     
     final staffList = snapshot.docs.map((doc) {
       final data = doc.data();
-      final roleStr = data['role']?.toString() ?? 'Staff';
-      final roleLower = roleStr.toLowerCase();
-      
       return {
         'id': doc.id,
         'name': data['name'] ?? 'Unknown',
-        'role': roleStr,
-        'isSelectable': roleLower.contains('coordinator') || roleLower.contains('chairman'), 
-        'isRecommended': roleLower.contains('coordinator'),
+        'role': data['role']?.toString() ?? 'Staff',
       };
     }).toList();
 
-    // Inject a Chairman card artificially if one isn't found in the database yet
-    final hasChairman = staffList.any((staff) => (staff['role'] as String).toLowerCase().contains('chairman'));
-    if (!hasChairman) {
-      staffList.add({
-        'id': 'mock_chairman_id',
-        'name': 'Chairman (Pending Setup)',
-        'role': 'Chairman',
-        'isSelectable': true,
-        'isRecommended': false,
-      });
+    // Inject dummy roles if they aren't found in the database yet
+    final rolesStr = staffList.map((s) => (s['role'] as String).toLowerCase()).toList();
+    
+    if (!rolesStr.any((r) => r.contains('chairman'))) {
+      staffList.add({'id': 'mock_chairman_id', 'name': 'Chairman (Pending Setup)', 'role': 'Chairman'});
+    }
+    if (!rolesStr.any((r) => r.contains('dean'))) {
+      staffList.add({'id': 'mock_dean_id', 'name': 'Dean (Pending Setup)', 'role': 'Dean'});
+    }
+    if (!rolesStr.any((r) => r.contains('department office'))) {
+      staffList.add({'id': 'mock_dept_office_id', 'name': 'Department Office (Pending Setup)', 'role': 'Department Office'});
     }
 
     return staffList;
@@ -93,6 +89,7 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentUserRole = ref.watch(authStateProvider).value?.role ?? '';
     final staffAsync = ref.watch(availableStaffProvider);
 
     return Scaffold(
@@ -145,38 +142,45 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                     
                     return Column(
                       children: staffList.where((staff) {
-                        // Prevent users from forwarding to their own role (e.g., Coordinator to Coordinator)
-                        final currentUserRole = ref.read(authStateProvider).value?.role ?? '';
-                        if (currentUserRole.toLowerCase() == (staff['role'] as String).toLowerCase()) {
+                        final roleStr = (staff['role'] as String).toLowerCase();
+                        final currentUserRoleLower = currentUserRole.toLowerCase();
+                        
+                        // Prevent users from forwarding to their own role
+                        if (currentUserRoleLower == roleStr) {
                           return false;
                         }
-                        return true;
+                        
+                        // Chairman: Only show Dean and Department Office
+                        if (currentUserRoleLower.contains('chairman')) {
+                          if (roleStr.contains('dean') || roleStr.contains('department office')) {
+                            return true;
+                          }
+                          return false;
+                        } 
+                        // Others (Coordinator, Adviser): Only show Coordinator and Chairman
+                        else {
+                          if (roleStr.contains('coordinator') || roleStr.contains('chairman')) {
+                            return true;
+                          }
+                          return false;
+                        }
                       }).map((staff) {
-                        final isSelectable = staff['isSelectable'] as bool;
+
+
                         final isSelected = _selectedStaffId == staff['id'];
-                        final isRecommended = staff['isRecommended'] as bool;
                         
                         return GestureDetector(
-                          onTap: isSelectable ? () => setState(() {
+                          onTap: () => setState(() {
                             _selectedStaffId = staff['id'];
                             _selectedStaffName = staff['name'];
-                          }) : () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Batch Advisers are not authorized to forward directly to the ${staff['role']}.'),
-                                backgroundColor: Colors.red.shade600,
-                              ),
-                            );
-                          },
-                          child: Opacity(
-                            opacity: isSelectable ? 1.0 : 0.6,
-                            child: Container(
+                          }),
+                          child: Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: isSelected ? theme.primaryColor.withValues(alpha: 0.05) : Colors.white,
                                 border: Border.all(
-                                  color: isSelected ? theme.primaryColor : (isSelectable ? Colors.grey.shade300 : Colors.grey.shade200),
+                                  color: isSelected ? theme.primaryColor : Colors.grey.shade300,
                                   width: isSelected ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(16),
@@ -190,8 +194,8 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 28,
-                                    backgroundColor: isSelectable ? theme.primaryColor.withValues(alpha: 0.1) : Colors.grey.shade200,
-                                    child: Icon(Icons.person, color: isSelectable ? theme.primaryColor : Colors.grey, size: 28),
+                                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
+                                    child: Icon(Icons.person, color: theme.primaryColor, size: 28),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
@@ -203,48 +207,32 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                                           spacing: 8,
                                           runSpacing: 4,
                                           children: [
-                                            Text(staff['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isSelectable ? Colors.black87 : Colors.grey.shade600)),
-                                            if (isRecommended)
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                                                child: const Text('RECOMMENDED', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
-                                              ),
-                                            if (!isSelectable)
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                                                child: const Text('RESTRICTED', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
-                                              ),
+                                            Text(staff['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
-                                        Text('${staff['role']}', style: TextStyle(color: isSelectable ? theme.primaryColor : Colors.grey.shade500, fontWeight: FontWeight.w600, fontSize: 13)),
+                                        Text('${staff['role']}', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600, fontSize: 13)),
                                       ],
                                     ),
                                   ),
                                   const SizedBox(width: 16),
-                                  if (isSelectable)
+                                  // ignore: deprecated_member_use
+                                  Radio<String>(
+                                    value: staff['id'],
                                     // ignore: deprecated_member_use
-                                    Radio<String>(
-                                      value: staff['id'],
-                                      // ignore: deprecated_member_use
-                                      groupValue: _selectedStaffId,
-                                      activeColor: theme.primaryColor,
-                                      // ignore: deprecated_member_use
-                                      onChanged: (val) => setState(() {
-                                        _selectedStaffId = val!;
-                                        _selectedStaffName = staff['name'];
-                                      }),
-                                    )
-                                  else
-                                    const Icon(Icons.lock_outline, color: Colors.grey),
+                                    groupValue: _selectedStaffId,
+                                    activeColor: theme.primaryColor,
+                                    // ignore: deprecated_member_use
+                                    onChanged: (val) => setState(() {
+                                      _selectedStaffId = val!;
+                                      _selectedStaffName = staff['name'];
+                                    }),
+                                  ),
                                 ],
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),

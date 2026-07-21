@@ -5,6 +5,7 @@ import '../../features/auth/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/registration_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/admin_access_page.dart';
 import '../../features/admin/presentation/pages/chairman_dashboard_page.dart';
 import '../../features/admin/presentation/pages/adviser_dashboard_page.dart';
 import '../../features/dashboard/presentation/pages/student_dashboard_page.dart';
@@ -35,6 +36,7 @@ import '../../features/complaints/data/models/complaint_model.dart';
 import '../../features/complaints/presentation/pages/complaint_details_page.dart';
 import '../../shared/layouts/main_layout.dart';
 import '../../shared/layouts/chairman_layout.dart';
+import '../../shared/layouts/admin_layout.dart';
 import '../../features/admin/presentation/pages/manage_coordinators_page.dart';
 import '../../features/admin/presentation/pages/chairman_announcements_page.dart';
 import '../../features/admin/presentation/pages/create_announcement_page.dart';
@@ -80,13 +82,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/complaint_archive',
-            builder: (context, state) => const ComplaintArchivePage(),
+            builder: (context, state) {
+              final filter = state.uri.queryParameters['filter'] ?? 'all';
+              return ComplaintArchivePage(initialFilter: filter);
+            },
           ),
         ]
       ),
-      GoRoute(
-        path: '/dashboard/admin',
-        builder: (context, state) => const AdminDashboardPage(),
+      ShellRoute(
+        builder: (context, state, child) => AdminLayout(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard/admin',
+            builder: (context, state) => const AdminDashboardPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/admin/access',
+            builder: (context, state) => const AdminAccessPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/admin/profile',
+            builder: (context, state) => const UserProfilePage(isSubPage: false),
+          ),
+        ],
       ),
       ShellRoute(
         builder: (context, state, child) => ChairmanLayout(child: child),

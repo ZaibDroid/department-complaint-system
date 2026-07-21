@@ -100,7 +100,8 @@ class _ComplaintDetailsPageState extends ConsumerState<ComplaintDetailsPage> {
     final theme = Theme.of(context);
     final authState = ref.watch(authStateProvider).value;
     final isStaff = authState != null && authState.role != 'Student';
-    final isPending = widget.complaint.status == 'pending';
+    final isActionable = widget.complaint.status == 'pending' || widget.complaint.status == 'forwarded';
+    final currentUserRole = authState?.role.toLowerCase() ?? '';
     
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8FC),
@@ -286,7 +287,7 @@ class _ComplaintDetailsPageState extends ConsumerState<ComplaintDetailsPage> {
           ],
         ),
       ),
-      bottomNavigationBar: isStaff && isPending ? SafeArea(
+      bottomNavigationBar: isStaff && isActionable ? SafeArea(
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -307,7 +308,9 @@ class _ComplaintDetailsPageState extends ConsumerState<ComplaintDetailsPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/select_recipient', extra: widget.complaint),
                   icon: const Icon(Icons.forward_to_inbox),
-                  label: const Text('Forward to Chairman / Coordinator'),
+                  label: Text(currentUserRole.contains('chairman')
+                      ? 'Forward to Dean / Dept Office'
+                      : 'Forward to Chairman / Coordinator'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.primaryColor,
                     foregroundColor: Colors.white,

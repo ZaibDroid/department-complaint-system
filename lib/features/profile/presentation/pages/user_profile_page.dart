@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../admin/presentation/providers/adviser_assignment_provider.dart';
 
 class UserProfilePage extends ConsumerStatefulWidget {
   final bool isSubPage;
@@ -17,7 +18,6 @@ class UserProfilePage extends ConsumerStatefulWidget {
 
 class _UserProfilePageState extends ConsumerState<UserProfilePage> {
   String? _selectedAdviser;
-  final List<String> _advisers = ['Dr. Ali', 'Dr. Usman', 'Dr. Bilal', 'Engr. Sara'];
   bool _isSubmitting = false;
   final ImagePicker _picker = ImagePicker();
 
@@ -326,6 +326,12 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
     final bool isUnlinked = isStudent && user.status == 'unlinked';
     final bool isPending = isStudent && user.status == 'pending';
 
+    final advisersAsyncValue = ref.watch(batchAdvisersStreamProvider);
+    final List<String> advisers = (advisersAsyncValue.value ?? [])
+        .map((u) => u.name)
+        .toSet()
+        .toList();
+
     final bodyContent = SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -356,10 +362,11 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          initialValue: _selectedAdviser,
+                          initialValue: advisers.contains(_selectedAdviser) ? _selectedAdviser : null,
                           decoration: const InputDecoration(labelText: 'Select Batch Adviser', filled: true, fillColor: Colors.white),
-                          items: _advisers.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          items: advisers.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (val) => setState(() => _selectedAdviser = val),
+                          hint: advisers.isEmpty ? const Text('No advisers found') : null,
                         ),
                       ),
                       const SizedBox(width: 16),

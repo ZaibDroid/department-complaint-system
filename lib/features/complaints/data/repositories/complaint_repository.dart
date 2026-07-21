@@ -116,6 +116,27 @@ class ComplaintRepository {
     });
   }
 
+  Stream<List<ComplaintModel>> streamAllComplaints() {
+    return _firestore
+        .collection('complaints')
+        .snapshots()
+        .map((snapshot) {
+      final complaints = snapshot.docs
+          .map((doc) {
+            try {
+              return ComplaintModel.fromMap(doc.data(), doc.id);
+            } catch (e) {
+              return null;
+            }
+          })
+          .where((c) => c != null)
+          .cast<ComplaintModel>()
+          .toList();
+      complaints.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return complaints;
+    });
+  }
+
   Future<void> updateComplaintStatus(String id, String newStatus, {String? adminRemarks, String? assignedToId, String? assignedTo, List<String>? newInvolvedStaff}) async {
     final updateData = <String, dynamic>{
       'status': newStatus,

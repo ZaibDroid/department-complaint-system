@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/widgets/primary_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../complaints/presentation/providers/complaint_provider.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -13,57 +12,30 @@ class AdminDashboardPage extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  
-  String? _selectedRole;
-  final List<String> _roles = ['Chairman', 'Dean', 'Office Staff', 'Coordinator'];
-  bool _isLoading = false;
 
-  void _createAccount() async {
-    if (_formKey.currentState!.validate() && _selectedRole != null) {
-      setState(() => _isLoading = true);
-      
-      try {
-        await ref.read(firebaseAuthRepositoryProvider).createStaffAccount(
-          name: _nameController.text.trim(),
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          role: _selectedRole!,
-        );
-        
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-            _nameController.clear();
-            _emailController.clear();
-            _passwordController.clear();
-            _selectedRole = null;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Staff account created successfully!')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-          );
-        }
-      }
-    } else if (_selectedRole == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a role')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final complaintsAsync = ref.watch(allComplaintsProvider);
+    
+    int totalComplaints = 0;
+    int pendingComplaints = 0;
+    int forwardedComplaints = 0;
+    int resolvedComplaints = 0;
+
+    complaintsAsync.whenData((complaints) {
+      totalComplaints = complaints.length;
+      for (var c in complaints) {
+        if (c.status == 'pending') {
+          pendingComplaints++;
+        } else if (c.status == 'forwarded') {
+          forwardedComplaints++;
+        } else if (c.status == 'resolved' || c.status == 'rejected') {
+          resolvedComplaints++;
+        }
+      }
+    });
     
     return Scaffold(
       appBar: AppBar(
@@ -84,70 +56,60 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Create Staff Account",
+              "System Analytics",
               style: theme.textTheme.displayMedium,
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Provision accounts for top-level department staff.",
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 32),
-            Form(
-              key: _formKey,
-              child: Column(
+            const SizedBox(height: 16),
+            complaintsAsync.when(
+              data: (_) => GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: 1.5,
                 children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRole,
-                    items: _roles.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                    onChanged: (val) => setState(() => _selectedRole = val),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Role',
-                      prefixIcon: Icon(Icons.admin_panel_settings_outlined),
-                    ),
-                    validator: (val) => val == null ? 'Role is required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _nameController,
-                    labelText: "Full Name",
-                    prefixIcon: const Icon(Icons.person_outline),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _emailController,
-                    labelText: "Staff Email",
-                    hintText: "e.g. chairman@uetmardan.edu.pk",
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Required';
-                      if (!value.trim().endsWith('@uetmardan.edu.pk')) {
-                        return 'Must be a @uetmardan.edu.pk email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _passwordController,
-                    labelText: "Temporary Password",
-                    isPassword: true,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    validator: (value) => value == null || value.length < 6 ? 'Min 6 characters' : null,
-                  ),
-                  const SizedBox(height: 32),
-                  PrimaryButton(
-                    text: "Create Account",
-                    isLoading: _isLoading,
-                    onPressed: _createAccount,
-                  ),
+                  _buildStatCard('Total\nComplaints', totalComplaints.toString(), Colors.blue, Icons.assessment, 'all'),
+                  _buildStatCard('Pending\nComplaints', pendingComplaints.toString(), Colors.orange, Icons.pending_actions, 'pending'),
+                  _buildStatCard('Forwarded\nComplaints', forwardedComplaints.toString(), Colors.purple, Icons.forward_to_inbox, 'forwarded'),
+                  _buildStatCard('Resolved\nComplaints', resolvedComplaints.toString(), Colors.green, Icons.check_circle, 'resolved'),
                 ],
               ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Text('Error loading analytics: $err', style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, Color color, IconData icon, String filterValue) {
+    return InkWell(
+      onTap: () => context.push('/complaint_archive?filter=$filterValue'),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const Spacer(),
+              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+        ],
+      ),
       ),
     );
   }

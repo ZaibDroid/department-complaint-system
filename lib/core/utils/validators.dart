@@ -31,6 +31,12 @@ class AppValidators {
     
     final localPart = email.split('@')[0];
     
+    // Explicitly allow specific staff emails to bypass student format restriction
+    final allowedStaff = ['admin', 'chairman', 'dean', 'coordinator', 'office'];
+    if (allowedStaff.contains(localPart) || localPart.startsWith('adviser') || localPart.startsWith('batchadviser')) {
+      return null;
+    }
+    
     // Student format: e.g. 23mdbcs495 (2 digits year + letters + digits reg num)
     final studentRegex = RegExp(r'^\d{2}[a-z]+\d+$');
     
