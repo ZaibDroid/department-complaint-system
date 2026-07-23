@@ -9,7 +9,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 final availableStaffProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return FirebaseFirestore.instance
       .collection('users')
-      .where('role', whereIn: ['Coordinator', 'Chairman', 'Dean', 'Department Office'])
+      .where('role', whereIn: ['Coordinator', 'Chairman', 'Dean', 'Department Office', 'Vice Chancellor'])
       .snapshots()
       .map((snapshot) {
     
@@ -33,6 +33,9 @@ final availableStaffProvider = StreamProvider.autoDispose<List<Map<String, dynam
     }
     if (!rolesStr.any((r) => r.contains('department office'))) {
       staffList.add({'id': 'mock_dept_office_id', 'name': 'Department Office (Pending Setup)', 'role': 'Department Office'});
+    }
+    if (!rolesStr.any((r) => r.contains('vice chancellor'))) {
+      staffList.add({'id': 'mock_vc_id', 'name': 'Vice Chancellor (Pending Setup)', 'role': 'Vice Chancellor'});
     }
 
     return staffList;
@@ -150,8 +153,15 @@ class _SelectRecipientPageState extends ConsumerState<SelectRecipientPage> {
                           return false;
                         }
                         
+                        // Dean: Show Chairman and Vice Chancellor
+                        if (currentUserRoleLower.contains('dean')) {
+                          if (roleStr.contains('chairman') || roleStr.contains('vice chancellor')) {
+                            return true;
+                          }
+                          return false;
+                        }
                         // Chairman: Only show Dean and Department Office
-                        if (currentUserRoleLower.contains('chairman')) {
+                        else if (currentUserRoleLower.contains('chairman')) {
                           if (roleStr.contains('dean') || roleStr.contains('department office')) {
                             return true;
                           }

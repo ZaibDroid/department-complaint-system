@@ -14,6 +14,7 @@ import '../../features/complaints/presentation/pages/submit_complaint_page.dart'
 import '../../features/complaints/presentation/pages/complaint_timeline_page.dart';
 import '../../features/complaints/presentation/pages/resolve_complaint_page.dart';
 import '../../features/notice_board/presentation/pages/student_notice_board_page.dart';
+import '../../features/notice_board/presentation/pages/staff_notice_board_page.dart';
 import '../../features/notice_board/presentation/pages/notice_creator_page.dart';
 import '../../features/profile/presentation/pages/user_profile_page.dart';
 import '../../features/splash/presentation/pages/splash_screen_page.dart';
@@ -40,6 +41,7 @@ import '../../shared/layouts/admin_layout.dart';
 import '../../features/admin/presentation/pages/manage_coordinators_page.dart';
 import '../../features/admin/presentation/pages/chairman_announcements_page.dart';
 import '../../features/admin/presentation/pages/create_announcement_page.dart';
+import '../../features/admin/presentation/pages/vc_dashboard_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final isFirstLaunchProvider = Provider<bool>((ref) => false);
@@ -99,6 +101,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/dashboard/admin/access',
             builder: (context, state) => const AdminAccessPage(),
+          ),
+          GoRoute(
+            path: '/dashboard/admin/notices',
+            builder: (context, state) => const StaffNoticeBoardPage(),
           ),
           GoRoute(
             path: '/dashboard/admin/profile',
@@ -195,6 +201,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/dean',
         builder: (context, state) => const DeanDashboardPage(),
+      ),
+      GoRoute(
+        path: '/dashboard/vc',
+        builder: (context, state) => const VcDashboardPage(),
       ),
       GoRoute(
         path: '/dashboard/coordinator',

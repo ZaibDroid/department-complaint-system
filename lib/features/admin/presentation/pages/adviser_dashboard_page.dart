@@ -111,14 +111,14 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
     bool isAssignedToMe(String? assignedTo) {
       if (assignedTo == null || assignedTo.isEmpty) return false;
       final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
-      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+      return assignedToLower == myNameLower;
     }
     
     final pendingCount = complaints.where((c) => isAssignedToMe(c.assignedTo) && c.status != 'resolved' && c.status != 'rejected').length;
     final resolvedCount = complaints.where((c) => c.status == 'resolved').length;
     final forwardedCount = complaints.where((c) => !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
       final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
-      return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+      return involvedLower == myNameLower;
     }) && c.status != 'resolved').length;
 
     return Scaffold(
@@ -310,7 +310,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
     bool isAssignedToMe(String? assignedTo) {
       if (assignedTo == null || assignedTo.isEmpty) return false;
       final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
-      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+      return assignedToLower == myNameLower;
     }
 
     var filtered = complaints.where((c) {
@@ -319,7 +319,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
       if (_selectedFilter == 'forwarded') {
         return !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
           final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
-          return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+          return involvedLower == myNameLower;
         });
       }
       if (_selectedFilter == 'processed') return c.status == 'resolved' || c.status == 'rejected';
@@ -337,7 +337,7 @@ class _AdviserDashboardPageState extends ConsumerState<AdviserDashboardPage> {
         final c = filtered[index];
         final myNameLower = (ref.read(authStateProvider).value?.name ?? '').toLowerCase().replaceAll('dr.', '').trim();
         final assignedToLower = (c.assignedTo ?? '').toLowerCase().replaceAll('dr.', '').trim();
-        final isAssignedToMe = assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+        final isAssignedToMe = assignedToLower == myNameLower;
         final isPending = isAssignedToMe && c.status != 'resolved' && c.status != 'rejected';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),

@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../features/dashboard/presentation/widgets/staff_complaint_card.dart';
 import '../../../../features/complaints/presentation/providers/complaint_provider.dart';
 import '../../../../features/complaints/data/models/complaint_model.dart';
 import '../../../../features/profile/presentation/widgets/stat_card.dart';
-import '../../../../features/profile/presentation/pages/user_profile_page.dart';
-import 'assign_adviser_page.dart';
-import '../../../../features/batch/presentation/pages/batch_management_portal_page.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/notice_board/presentation/pages/staff_notice_board_page.dart';
+import '../../../../features/profile/presentation/pages/user_profile_page.dart';
 
-class CoordinatorDashboardPage extends ConsumerStatefulWidget {
-  const CoordinatorDashboardPage({super.key});
+class VcDashboardPage extends ConsumerStatefulWidget {
+  const VcDashboardPage({super.key});
 
   @override
-  ConsumerState<CoordinatorDashboardPage> createState() => _CoordinatorDashboardPageState();
+  ConsumerState<VcDashboardPage> createState() => _VcDashboardPageState();
 }
 
-class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardPage> {
+class _VcDashboardPageState extends ConsumerState<VcDashboardPage> {
+  int _bottomNavIndex = 0;
   String _selectedFilter = 'pending'; // 'pending', 'processed', 'forwarded'
-  int _bottomNavIndex = 0; // 0 for Dashboard, 1 for Profile
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final asyncComplaints = ref.watch(departmentComplaintsProvider);
-
     List<ComplaintModel> complaints = asyncComplaints.value ?? [];
 
     final user = ref.read(authStateProvider).value;
@@ -52,16 +49,16 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
       appBar: const DashboardAppBar(),
       body: Column(
         children: [
-          if (_bottomNavIndex == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Coordinator Portal',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF172548)),
-                  ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Vice Chancellor Portal',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF172548)),
+                ),
+                if (_bottomNavIndex == 0) ...[
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -100,25 +97,22 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
                     ],
                   ),
                 ],
-              ),
+              ],
             ),
+          ),
           const SizedBox(height: 12),
-          Expanded(
-            child: _bottomNavIndex == 4
-                ? const UserProfilePage(isSubPage: false)
-                : _bottomNavIndex == 3
-                    ? const StaffNoticeBoardPage()
-                : _bottomNavIndex == 2
-                    ? const BatchManagementPortalPage(isEmbedded: true)
-                : _bottomNavIndex == 1
-                    ? const AssignAdviserPage(isEmbedded: true)
-                    : asyncComplaints.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (e, st) => Center(child: Text('Error: $e')),
-                        data: (complaintsList) {
-                          return _buildComplaintsList(complaintsList, theme);
-                        },
-                      ),
+          _bottomNavIndex == 0 ? Expanded(
+            child: asyncComplaints.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Center(child: Text('Error: $e')),
+              data: (complaintsList) {
+                return _buildComplaintsList(complaintsList, theme);
+              },
+            ),
+          ) : Expanded(
+            child: _bottomNavIndex == 1
+                ? const StaffNoticeBoardPage()
+                : const UserProfilePage(isSubPage: false),
           ),
         ],
       ),
@@ -127,7 +121,6 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
         onTap: (index) {
           setState(() {
             _bottomNavIndex = index;
-            if (index == 0) _selectedFilter = 'pending'; // Reset filter when switching back
           });
         },
         type: BottomNavigationBarType.fixed,
@@ -135,8 +128,6 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
         unselectedItemColor: Colors.grey.shade400,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.group_add), label: 'Advisers'),
-          BottomNavigationBarItem(icon: Icon(Icons.class_), label: 'Batches'),
           BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Notices'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
@@ -176,10 +167,9 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final c = filtered[index];
-        final myNameLower = (ref.read(authStateProvider).value?.name ?? '').toLowerCase().replaceAll('dr.', '').trim();
         final assignedToLower = (c.assignedTo ?? '').toLowerCase().replaceAll('dr.', '').trim();
-        final isAssignedToMe = assignedToLower == myNameLower;
-        final isPending = isAssignedToMe && c.status != 'resolved' && c.status != 'rejected';
+        final isAssignedToMeFlag = assignedToLower == myNameLower;
+        final isPending = isAssignedToMeFlag && c.status != 'resolved' && c.status != 'rejected';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -231,7 +221,7 @@ class _CoordinatorDashboardPageState extends ConsumerState<CoordinatorDashboardP
             ElevatedButton(
               onPressed: () {
                 final comment = commentController.text.trim().isEmpty 
-                    ? (actionType == 'resolved' ? 'Issue resolved by coordinator' : 'Returned by coordinator')
+                    ? (actionType == 'resolved' ? 'Issue resolved by Vice Chancellor' : 'Returned by Vice Chancellor')
                     : commentController.text.trim();
                 ref.read(submitComplaintProvider.notifier).updateStatus(c.id, actionType, comment);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);

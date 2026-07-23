@@ -32,14 +32,14 @@ class _ChairmanDashboardPageState extends ConsumerState<ChairmanDashboardPage> {
     bool isAssignedToMe(String? assignedTo) {
       if (assignedTo == null || assignedTo.isEmpty) return false;
       final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
-      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+      return assignedToLower == myNameLower;
     }
     
     final pendingCount = complaints.where((c) => isAssignedToMe(c.assignedTo) && c.status != 'resolved' && c.status != 'rejected').length;
     final processedCount = complaints.where((c) => c.status == 'resolved' || c.status == 'rejected').length;
     final forwardedCount = complaints.where((c) => !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
       final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
-      return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+      return involvedLower == myNameLower;
     })).length;
 
     return Scaffold(
@@ -119,7 +119,7 @@ class _ChairmanDashboardPageState extends ConsumerState<ChairmanDashboardPage> {
     bool isAssignedToMe(String? assignedTo) {
       if (assignedTo == null || assignedTo.isEmpty) return false;
       final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
-      return assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+      return assignedToLower == myNameLower;
     }
 
     var filtered = complaints.where((c) {
@@ -128,7 +128,7 @@ class _ChairmanDashboardPageState extends ConsumerState<ChairmanDashboardPage> {
       if (_selectedFilter == 'forwarded') {
         return !isAssignedToMe(c.assignedTo) && c.involvedStaffNames.any((name) {
           final involvedLower = name.toLowerCase().replaceAll('dr.', '').trim();
-          return involvedLower.contains(myNameLower) || myNameLower.contains(involvedLower);
+          return involvedLower == myNameLower;
         });
       }
       return true;
@@ -145,7 +145,7 @@ class _ChairmanDashboardPageState extends ConsumerState<ChairmanDashboardPage> {
         final c = filtered[index];
         final myNameLower = (ref.read(authStateProvider).value?.name ?? '').toLowerCase().replaceAll('dr.', '').trim();
         final assignedToLower = (c.assignedTo ?? '').toLowerCase().replaceAll('dr.', '').trim();
-        final isAssignedToMe = assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower);
+        final isAssignedToMe = assignedToLower == myNameLower;
         final isPending = isAssignedToMe && c.status != 'resolved' && c.status != 'rejected';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),

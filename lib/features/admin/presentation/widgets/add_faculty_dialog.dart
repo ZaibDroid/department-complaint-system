@@ -81,57 +81,58 @@ class _AddFacultyDialogState extends ConsumerState<AddFacultyDialog> {
                 validator: (val) => val == null || val.length < 6 ? 'Min 6 characters' : null,
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedBatch,
-                      decoration: InputDecoration(
-                        labelText: 'Batch No.',
-                        prefixIcon: const Icon(Icons.numbers),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              if (widget.defaultRole == 'Batch Adviser')
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedBatch,
+                        decoration: InputDecoration(
+                          labelText: 'Batch No.',
+                          prefixIcon: const Icon(Icons.numbers),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                        items: batches.map((b) => DropdownMenuItem(
+                          value: b.name,
+                          child: Text(b.name, overflow: TextOverflow.ellipsis),
+                        )).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedBatch = val;
+                            _selectedSection = null;
+                          });
+                        },
+                        validator: (val) => val == null ? 'Required' : null,
                       ),
-                      items: batches.map((b) => DropdownMenuItem(
-                        value: b.name,
-                        child: Text(b.name, overflow: TextOverflow.ellipsis),
-                      )).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedBatch = val;
-                          _selectedSection = null;
-                        });
-                      },
-                      validator: (val) => val == null ? 'Required' : null,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedSection,
-                      decoration: InputDecoration(
-                        labelText: 'Section',
-                        prefixIcon: const Icon(Icons.view_module),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedSection,
+                        decoration: InputDecoration(
+                          labelText: 'Section',
+                          prefixIcon: const Icon(Icons.view_module),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        ),
+                        items: _selectedBatch == null 
+                            ? [] 
+                            : batches.firstWhere((b) => b.name == _selectedBatch).sections.map((s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(s),
+                              )).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedSection = val;
+                          });
+                        },
+                        validator: (val) => val == null ? 'Required' : null,
                       ),
-                      items: _selectedBatch == null 
-                          ? [] 
-                          : batches.firstWhere((b) => b.name == _selectedBatch).sections.map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s),
-                            )).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedSection = val;
-                        });
-                      },
-                      validator: (val) => val == null ? 'Required' : null,
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),

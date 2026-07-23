@@ -11,7 +11,8 @@ class AdminLayout extends ConsumerWidget {
     final location = GoRouterState.of(context).uri.path;
     if (location == '/dashboard/admin') return 0;
     if (location.startsWith('/dashboard/admin/access')) return 1;
-    if (location.startsWith('/dashboard/admin/profile')) return 2;
+    if (location.startsWith('/dashboard/admin/notices')) return 2;
+    if (location.startsWith('/dashboard/admin/profile')) return 3;
     return 0;
   }
 
@@ -24,6 +25,9 @@ class AdminLayout extends ConsumerWidget {
         context.go('/dashboard/admin/access');
         break;
       case 2:
+        context.go('/dashboard/admin/notices');
+        break;
+      case 3:
         context.go('/dashboard/admin/profile');
         break;
     }
@@ -45,6 +49,7 @@ class AdminLayout extends ConsumerWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Access'),
+          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Notices'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

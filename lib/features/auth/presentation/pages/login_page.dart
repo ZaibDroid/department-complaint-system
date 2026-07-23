@@ -49,6 +49,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             context.go('/dashboard/adviser');
           } else if (role == 'Dean') {
             context.go('/dashboard/dean');
+          } else if (role == 'Vice Chancellor') {
+            context.go('/dashboard/vc');
           } else if (role == 'Coordinator') {
             context.go('/dashboard/coordinator');
           } else if (role == 'Office') {

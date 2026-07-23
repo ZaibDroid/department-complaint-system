@@ -63,6 +63,7 @@ class FirebaseAuthRepository {
       if (email == 'admin@uetmardan.edu.pk') role = 'Admin';
       if (email == 'chairman@uetmardan.edu.pk') role = 'Chairman';
       if (email == 'dean@uetmardan.edu.pk') role = 'Dean';
+      if (email == 'vc@uetmardan.edu.pk') role = 'Vice Chancellor';
       if (email == 'coordinator@uetmardan.edu.pk') role = 'Coordinator';
       if (email == 'office@uetmardan.edu.pk') role = 'Office';
       if (email.startsWith('adviser') || email.startsWith('batchadviser')) role = 'Batch Adviser';
@@ -190,6 +191,22 @@ class FirebaseAuthRepository {
     return snapshot.docs.length;
   }
 
+  Future<int> handoverAdvisers(String oldCoordinatorName, String newCoordinatorName) async {
+    final snapshot = await _firestore.collection('users')
+        .where('role', isEqualTo: 'Batch Adviser')
+        .where('adviser', isEqualTo: oldCoordinatorName)
+        .get();
+        
+    if (snapshot.docs.isEmpty) return 0;
+
+    final batch = _firestore.batch();
+    for (var doc in snapshot.docs) {
+      batch.update(doc.reference, {'adviser': newCoordinatorName});
+    }
+    await batch.commit();
+    return snapshot.docs.length;
+  }
+
   Future<void> updatePersonalInfo(String uid, {
     required String name,
     required String year,
@@ -250,13 +267,7 @@ class FirebaseAuthRepository {
     if (docSnapshot.exists && docSnapshot.data() != null) {
       return User.fromJson(docSnapshot.data()!);
     } else {
-      // Fallback if document doesn't exist yet (e.g. they authenticated but Firestore failed)
-      return User(
-        id: uid,
-        name: 'Unknown User',
-        email: fallbackEmail,
-        role: 'Student',
-      );
+      throw Exception('Account data not found. Please contact administration.');
     }
   }
 }

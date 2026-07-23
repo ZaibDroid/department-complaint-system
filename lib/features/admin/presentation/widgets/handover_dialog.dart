@@ -26,16 +26,18 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
     
     setState(() => _isLoading = true);
 
+    final isCoordinator = widget.oldAdviser.role == 'Coordinator';
+    
     try {
-      final updatedCount = await ref
-          .read(firebaseAuthRepositoryProvider)
-          .handoverStudents(widget.oldAdviser.name, _selectedAdviserName!);
+      final updatedCount = isCoordinator
+          ? await ref.read(firebaseAuthRepositoryProvider).handoverAdvisers(widget.oldAdviser.name, _selectedAdviserName!)
+          : await ref.read(firebaseAuthRepositoryProvider).handoverStudents(widget.oldAdviser.name, _selectedAdviserName!);
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully transferred $updatedCount students to $_selectedAdviserName!'),
+            content: Text('Successfully transferred $updatedCount ${isCoordinator ? 'advisers' : 'students'} to $_selectedAdviserName!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -44,7 +46,7 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error transferring students: $e'),
+            content: Text('Error transferring ${isCoordinator ? 'advisers' : 'students'}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -61,6 +63,10 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
         .where((a) => a.id != widget.oldAdviser.id)
         .toList();
 
+    final isCoordinator = widget.oldAdviser.role == 'Coordinator';
+    final targetRole = isCoordinator ? 'advisers' : 'students';
+    final titleRole = isCoordinator ? 'Coordinator' : 'Adviser';
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
@@ -74,10 +80,10 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
             child: const Icon(Icons.transfer_within_a_station, color: Colors.blue),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Handover Students',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Handover $targetRole',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
         ],
@@ -87,16 +93,16 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Transfer all students currently linked to ${widget.oldAdviser.name} to a new adviser.',
+            'Transfer all $targetRole currently linked to ${widget.oldAdviser.name} to a new $titleRole.',
             style: const TextStyle(color: Colors.black87),
           ),
           const SizedBox(height: 20),
-          const Text('Select New Adviser', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Select New $titleRole', style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           if (eligibleAdvisers.isEmpty)
-            const Text(
-              'No other batch advisers available. Please create a new adviser account first.',
-              style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+            Text(
+              'No other ${titleRole.toLowerCase()}s available. Please create a new ${titleRole.toLowerCase()} account first.',
+              style: const TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
             )
           else
             DropdownButtonFormField<String>(
@@ -112,7 +118,7 @@ class _HandoverDialogState extends ConsumerState<HandoverDialog> {
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
               ),
-              hint: const Text('Choose new adviser...'),
+              hint: Text('Choose new ${titleRole.toLowerCase()}...'),
               initialValue: _selectedAdviserName,
               items: eligibleAdvisers.map((a) {
                 final batchInfo = a.semester ?? a.batch ?? 'Unassigned';

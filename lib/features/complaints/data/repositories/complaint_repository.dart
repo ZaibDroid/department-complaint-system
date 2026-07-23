@@ -100,11 +100,11 @@ class ComplaintRepository {
         complaints = complaints.where((c) {
           final assignedTo = c.assignedTo ?? '';
           final assignedToLower = assignedTo.toLowerCase().replaceAll('dr.', '').trim();
-          bool isAssigned = assignedToLower.isNotEmpty && (assignedToLower.contains(myNameLower) || myNameLower.contains(assignedToLower));
+          bool isAssigned = assignedToLower.isNotEmpty && assignedToLower == myNameLower;
           
           bool isInvolved = c.involvedStaffNames.any((name) {
             final nameLower = name.toLowerCase().replaceAll('dr.', '').trim();
-            return nameLower.isNotEmpty && (nameLower.contains(myNameLower) || myNameLower.contains(nameLower));
+            return nameLower.isNotEmpty && nameLower == myNameLower;
           });
           
           return isAssigned || isInvolved;

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+
+final staffAccountsProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('users')
+      .where('role', whereIn: ['Vice Chancellor', 'Dean', 'Chairman', 'Department Office'])
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  });
+});
 
 class AdminAccessPage extends ConsumerStatefulWidget {
   const AdminAccessPage({super.key});
@@ -19,18 +29,18 @@ class _AdminAccessPageState extends ConsumerState<AdminAccessPage> {
   final TextEditingController _passwordController = TextEditingController();
   
   String? _selectedRole;
-  final List<String> _roles = ['Vice Chancellor', 'Dean', 'Chairman', 'Coordinator', 'Department Office'];
+  final List<String> _roles = ['Vice Chancellor', 'Dean', 'Chairman', 'Department Office'];
 
   IconData _getRoleIcon(String role) {
     switch (role) {
       case 'Vice Chancellor': return Icons.account_balance;
       case 'Dean': return Icons.school;
       case 'Chairman': return Icons.person;
-      case 'Coordinator': return Icons.assignment_ind;
       case 'Department Office': return Icons.desk;
       default: return Icons.person_outline;
     }
   }
+  
   bool _isLoading = false;
 
   void _createAccount() async {
@@ -53,6 +63,7 @@ class _AdminAccessPageState extends ConsumerState<AdminAccessPage> {
             _passwordController.clear();
             _selectedRole = null;
           });
+          Navigator.pop(context); // close bottom sheet
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Staff account created successfully!')),
           );
@@ -72,6 +83,121 @@ class _AdminAccessPageState extends ConsumerState<AdminAccessPage> {
     }
   }
 
+  void _showCreateStaffForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Create Staff Account",
+                      style: Theme.of(context).textTheme.displayMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Provision accounts for top-level department staff.",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 24),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedRole,
+                            items: _roles.map((e) => DropdownMenuItem(
+                              value: e, 
+                              child: Row(
+                                children: [
+                                  Icon(_getRoleIcon(e), size: 20, color: Colors.grey.shade700),
+                                  const SizedBox(width: 12),
+                                  Text(e),
+                                ],
+                              )
+                            )).toList(),
+                            onChanged: (val) {
+                              setModalState(() {
+                                _selectedRole = val;
+                              });
+                              setState(() {
+                                _selectedRole = val;
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Select Role',
+                              prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+                            ),
+                            validator: (val) => val == null ? 'Role is required' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _nameController,
+                            labelText: "Full Name",
+                            prefixIcon: const Icon(Icons.person_outline),
+                            validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _emailController,
+                            labelText: "Staff Email",
+                            hintText: "e.g. chairman@uetmardan.edu.pk",
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) return 'Required';
+                              if (!value.trim().endsWith('@uetmardan.edu.pk')) {
+                                return 'Must be a @uetmardan.edu.pk email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _passwordController,
+                            labelText: "Temporary Password",
+                            isPassword: true,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            validator: (value) => value == null || value.length < 6 ? 'Min 6 characters' : null,
+                          ),
+                          const SizedBox(height: 32),
+                          PrimaryButton(
+                            text: "Create Account",
+                            isLoading: _isLoading,
+                            onPressed: () {
+                              setModalState(() {});
+                              _createAccount();
+                            },
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -83,19 +209,16 @@ class _AdminAccessPageState extends ConsumerState<AdminAccessPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final staffAccountsAsync = ref.watch(staffAccountsProvider);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Access Control'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authStateProvider.notifier).logout();
-              context.go('/login');
-            },
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateStaffForm(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Create Staff'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -103,76 +226,48 @@ class _AdminAccessPageState extends ConsumerState<AdminAccessPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Create Staff Account",
+              "Provisioned Staff Accounts",
               style: theme.textTheme.displayMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Provision accounts for top-level department staff.",
+              "Manage the top-level accounts in the department.",
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 32),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRole,
-                    items: _roles.map((e) => DropdownMenuItem(
-                      value: e, 
-                      child: Row(
-                        children: [
-                          Icon(_getRoleIcon(e), size: 20, color: Colors.grey.shade700),
-                          const SizedBox(width: 12),
-                          Text(e),
-                        ],
-                      )
-                    )).toList(),
-                    onChanged: (val) => setState(() => _selectedRole = val),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Role',
-                      prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+            const SizedBox(height: 24),
+            staffAccountsAsync.when(
+              data: (accounts) {
+                if (accounts.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Text('No staff accounts provisioned yet.'),
                     ),
-                    validator: (val) => val == null ? 'Role is required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _nameController,
-                    labelText: "Full Name",
-                    prefixIcon: const Icon(Icons.person_outline),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _emailController,
-                    labelText: "Staff Email",
-                    hintText: "e.g. chairman@uetmardan.edu.pk",
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Required';
-                      if (!value.trim().endsWith('@uetmardan.edu.pk')) {
-                        return 'Must be a @uetmardan.edu.pk email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: _passwordController,
-                    labelText: "Temporary Password",
-                    isPassword: true,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    validator: (value) => value == null || value.length < 6 ? 'Min 6 characters' : null,
-                  ),
-                  const SizedBox(height: 32),
-                  PrimaryButton(
-                    text: "Create Account",
-                    isLoading: _isLoading,
-                    onPressed: _createAccount,
-                  ),
-                ],
-              ),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: accounts.length,
+                  itemBuilder: (context, index) {
+                    final account = accounts[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
+                          child: Icon(_getRoleIcon(account['role']), color: theme.primaryColor),
+                        ),
+                        title: Text(account['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('${account['role']} • ${account['email']}'),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Text('Error loading accounts: $err', style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),

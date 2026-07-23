@@ -26,10 +26,12 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
     
     setState(() => _isLoading = true);
 
+    final isCoordinator = widget.adviserToDelete.role == 'Coordinator';
+    
     try {
-      final updatedCount = await ref
-          .read(firebaseAuthRepositoryProvider)
-          .handoverStudents(widget.adviserToDelete.name, _selectedAdviserName!);
+      final updatedCount = isCoordinator
+          ? await ref.read(firebaseAuthRepositoryProvider).handoverAdvisers(widget.adviserToDelete.name, _selectedAdviserName!)
+          : await ref.read(firebaseAuthRepositoryProvider).handoverStudents(widget.adviserToDelete.name, _selectedAdviserName!);
 
       await ref
           .read(firebaseAuthRepositoryProvider)
@@ -39,7 +41,7 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully transferred $updatedCount students and deleted adviser!'),
+            content: Text('Successfully transferred $updatedCount ${isCoordinator ? 'advisers' : 'students'} and deleted ${isCoordinator ? 'coordinator' : 'adviser'}!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -65,6 +67,10 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
         .where((a) => a.id != widget.adviserToDelete.id)
         .toList();
 
+    final isCoordinator = widget.adviserToDelete.role == 'Coordinator';
+    final targetRole = isCoordinator ? 'advisers' : 'students';
+    final titleRole = isCoordinator ? 'Coordinator' : 'Adviser';
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
@@ -78,10 +84,10 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
             child: const Icon(Icons.delete_forever, color: Colors.red),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Delete Adviser',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Delete $titleRole',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
         ],
@@ -91,16 +97,16 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'You are about to delete ${widget.adviserToDelete.name}. Before deleting, you must transfer any currently linked students to a new adviser.',
+            'You are about to delete ${widget.adviserToDelete.name}. Before deleting, you must transfer any currently linked $targetRole to a new $titleRole.',
             style: const TextStyle(color: Colors.black87),
           ),
           const SizedBox(height: 20),
-          const Text('Select New Adviser for Students', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Select New $titleRole for ${isCoordinator ? 'Advisers' : 'Students'}', style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           if (eligibleAdvisers.isEmpty)
-            const Text(
-              'No other batch advisers available. Please create a new adviser account first to transfer the students before deleting.',
-              style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+            Text(
+              'No other $titleRole available. Please create a new $titleRole account first to transfer the $targetRole before deleting.',
+              style: const TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
             )
           else
             DropdownButtonFormField<String>(
@@ -116,7 +122,7 @@ class _DeleteAdviserDialogState extends ConsumerState<DeleteAdviserDialog> {
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
               ),
-              hint: const Text('Choose new adviser...'),
+              hint: Text('Choose new ${titleRole.toLowerCase()}...'),
               initialValue: _selectedAdviserName,
               items: eligibleAdvisers.map((a) {
                 final batchInfo = a.semester ?? a.batch ?? 'Unassigned';
